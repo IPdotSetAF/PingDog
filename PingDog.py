@@ -2,11 +2,15 @@ import argparse
 import asyncio
 import time
 from pathlib import Path
-
+import ssl
+import certifi
 import aiohttp
 from rich.text import Text
 from textual.app import App
 from textual.widgets import DataTable, Header
+
+
+ssl_context = ssl.create_default_context(cafile=certifi.where())
 
 
 def read_urls_from_file(file_path):
@@ -36,7 +40,7 @@ class PingDog(App):
         self.set_interval(self.check_interval, self.check_urls)
 
     async def check_urls(self):
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context)) as session:
             tasks = [self.check_url(session, url) for url in self.urls]
             results = await asyncio.gather(*tasks)
             for url, result in zip(self.urls, results):
