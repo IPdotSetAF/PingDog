@@ -113,12 +113,18 @@ class PingDog(App):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Monitor website availability from a file containing URLs"
+        description="Monitor website availability from a file or a list of URLs"
     )
     parser.add_argument(
-        "file",
+        "-f",
+        "--file",
         type=str,
         help="Path to the file containing URLs (one per line)",
+    )
+    parser.add_argument(
+        "urls",
+        nargs="*",
+        help="List of URLs to check (if no file is provided)",
     )
     parser.add_argument(
         "-i",
@@ -129,18 +135,20 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    if not Path(args.file).exists():
-        print(f"Error: File '{args.file}' not found")
-        exit(1)
-
-    try:
-        urls = read_urls_from_file(args.file)
-    except Exception as e:
-        print(f"Error reading file: {e}")
-        exit(1)
+    if args.file:
+        if not Path(args.file).exists():
+            print(f"Error: File '{args.file}' not found")
+            exit(1)
+        try:
+            urls = read_urls_from_file(args.file)
+        except Exception as e:
+            print(f"Error reading file: {e}")
+            exit(1)
+    else:
+        urls = args.urls
 
     if not urls:
-        print("No valid URLs found in the file")
+        print("No valid URLs provided (use -f FILE or provide URLs as arguments)")
         exit(1)
 
     app = PingDog(urls, args.interval)
