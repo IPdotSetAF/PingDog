@@ -20,7 +20,6 @@ def read_urls_from_file(file_path):
 
 class PingDog(App):
     BINDINGS = [("q", "quit", "Quit")]
-    title = ""
 
     def __init__(self, config, urls, check_interval=30):
         super().__init__()
@@ -29,11 +28,8 @@ class PingDog(App):
         self.check_interval = check_interval
         self.metrics = {}
 
-        self.theme = self.config.theme
-
     def watch_theme(self, theme:str):
         self.config.theme = theme
-        # self.theme.set_theme(theme)
 
     def compose(self):
         yield Header()
@@ -44,6 +40,7 @@ class PingDog(App):
         table.add_columns("URL", "Status", "Response Time", "Last Checked")
         await self.check_urls()
         self.set_interval(self.check_interval, self.check_urls)
+        self.theme = self.config.theme
 
     async def check_urls(self):
         async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context)) as session:
