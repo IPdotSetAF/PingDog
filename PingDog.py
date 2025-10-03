@@ -8,7 +8,7 @@ import aiohttp
 from rich.text import Text
 from textual.app import App
 from textual.widgets import DataTable, Header
-
+from config import PingDogConfig
 
 ssl_context = ssl.create_default_context(cafile=certifi.where())
 
@@ -21,13 +21,15 @@ def read_urls_from_file(file_path):
 class PingDog(App):
     BINDINGS = [("q", "quit", "Quit")]
 
-    def __init__(self, urls, check_interval=30):
+    def __init__(self, config, urls, check_interval=30):
         super().__init__()
+        self.config = config
         self.urls = urls
         self.check_interval = check_interval
         self.metrics = {}
 
-    title = ""
+    def watch_theme(self, theme:str):
+        self.config.theme = theme
 
     def compose(self):
         yield Header()
@@ -38,6 +40,7 @@ class PingDog(App):
         table.add_columns("URL", "Status", "Response Time", "Last Checked")
         await self.check_urls()
         self.set_interval(self.check_interval, self.check_urls)
+        self.theme = self.config.theme
 
     async def check_urls(self):
         async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context)) as session:
@@ -51,7 +54,7 @@ class PingDog(App):
         start_time = time.time()
         try:
             async with session.get(
-                url, timeout=aiohttp.ClientTimeout(total=10)
+                url, timeout=aiohttp.ClientTimeout(total=self.config.timeout)
             ) as response:
                 return {
                     "status": response.status,
@@ -151,5 +154,5 @@ if __name__ == "__main__":
         print("No valid URLs provided (use -f FILE or provide URLs as arguments)")
         exit(1)
 
-    app = PingDog(urls, args.interval)
+    app = PingDog(PingDogConfig("config.yml"), urls, args.interval)
     app.run()
