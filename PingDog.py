@@ -1,4 +1,3 @@
-import argparse
 import asyncio
 import time
 from pathlib import Path
@@ -9,6 +8,7 @@ from rich.text import Text
 from textual.app import App
 from textual.widgets import DataTable, Header
 from config import PingDogConfig
+import sys
 
 ssl_context = ssl.create_default_context(cafile=certifi.where())
 
@@ -21,11 +21,11 @@ def read_urls_from_file(file_path):
 class PingDog(App):
     BINDINGS = [("q", "quit", "Quit")]
 
-    def __init__(self, config, urls, check_interval=30):
+    def __init__(self, config):
         super().__init__()
         self.config = config
-        self.urls = urls
-        self.check_interval = check_interval
+        self.urls = list(config.urls or [])
+        self.check_interval = int(config.interval)
         self.metrics = {}
 
     def watch_theme(self, theme:str):
@@ -113,46 +113,12 @@ class PingDog(App):
                 last_checked_text,
             )
 
-
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Monitor website availability from a file or a list of URLs"
-    )
-    parser.add_argument(
-        "-f",
-        "--file",
-        type=str,
-        help="Path to the file containing URLs (one per line)",
-    )
-    parser.add_argument(
-        "urls",
-        nargs="*",
-        help="List of URLs to check (if no file is provided)",
-    )
-    parser.add_argument(
-        "-i",
-        "--interval",
-        type=int,
-        default=30,
-        help="Check interval in seconds (default: 30)",
-    )
-    args = parser.parse_args()
+    cfg = PingDogConfig("config.yml")
+    cfg.load_args()
 
-    if args.file:
-        if not Path(args.file).exists():
-            print(f"Error: File '{args.file}' not found")
-            exit(1)
-        try:
-            urls = read_urls_from_file(args.file)
-        except Exception as e:
-            print(f"Error reading file: {e}")
-            exit(1)
-    else:
-        urls = args.urls
-
-    if not urls:
-        print("No valid URLs provided (use -f FILE or provide URLs as arguments)")
+    if not cfg.urls:
+        print("No valid URLs provided (use --urls, -f FILE, config, or positionals)")
         exit(1)
-
-    app = PingDog(PingDogConfig("config.yml"), urls, args.interval)
+    app = PingDog(cfg)
     app.run()
