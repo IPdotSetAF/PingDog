@@ -57,7 +57,7 @@ class PingDog(App):
         start_time = time.time()
         try:
             async with session.get(
-                url, timeout=aiohttp.ClientTimeout(total=10)
+                url, timeout=aiohttp.ClientTimeout(total=self.config.timeout)
             ) as response:
                 return {
                     "status": response.status,
