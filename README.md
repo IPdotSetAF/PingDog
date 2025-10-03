@@ -13,4 +13,4 @@ https://github.com
 3. run PingDog: `python PingDog.py urls.txt`
 4. (optional) set calling interval using `-i`
 
-`python PingDog.py urls.txt -i 5` : Calls services every 5 seconds
+`python PingDog.py -f urls.txt -i 5` : Calls services every 5 seconds

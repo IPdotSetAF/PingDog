@@ -8,7 +8,7 @@ import aiohttp
 from rich.text import Text
 from textual.app import App
 from textual.widgets import DataTable, Header
-
+from config import PingDogConfig
 
 ssl_context = ssl.create_default_context(cafile=certifi.where())
 
@@ -20,14 +20,20 @@ def read_urls_from_file(file_path):
 
 class PingDog(App):
     BINDINGS = [("q", "quit", "Quit")]
+    title = ""
 
-    def __init__(self, urls, check_interval=30):
+    def __init__(self, config, urls, check_interval=30):
         super().__init__()
+        self.config = config
         self.urls = urls
         self.check_interval = check_interval
         self.metrics = {}
 
-    title = ""
+        self.theme = self.config.theme
+
+    def watch_theme(self, theme:str):
+        self.config.theme = theme
+        # self.theme.set_theme(theme)
 
     def compose(self):
         yield Header()
@@ -151,5 +157,5 @@ if __name__ == "__main__":
         print("No valid URLs provided (use -f FILE or provide URLs as arguments)")
         exit(1)
 
-    app = PingDog(urls, args.interval)
+    app = PingDog(PingDogConfig("config.yml"), urls, args.interval)
     app.run()
