@@ -10,6 +10,7 @@ from textual.app import App
 from textual.binding import Binding
 from textual.widgets import DataTable, Header, Footer
 from config import PingDogConfig
+from FileDialog import FileDialog
 
 ssl_context = ssl.create_default_context(cafile=certifi.where())
 
@@ -18,14 +19,34 @@ def read_urls_from_file(file_path):
     with open(file_path, "r") as f:
         return [line.strip() for line in f if line.strip()]
 
-
 class PingDog(App):
+
+    def handle_file_dialog_import(self, result):
+        if result and result.get("button") == "ok" and result.get("value"):
+            file_path = result["value"]
+            try:
+                self.urls = read_urls_from_file(file_path)
+                self.update_table()
+                self.notify(f"Imported URLs from {file_path}")
+            except Exception as e:
+                self.notify(f"Failed to import: {e}", severity="error")
+
+    def handle_file_dialog_export(self, result):
+        if result and result.get("button") == "ok" and result.get("value"):
+            file_path = result["value"]
+            try:
+                with open(file_path, "w") as f:
+                    for url in self.urls:
+                        f.write(url + "\n")
+                self.notify(f"Exported URLs to {file_path}")
+            except Exception as e:
+                self.notify(f"Failed to export: {e}", severity="error")
     BINDINGS = [
-        Binding("q", "quit", "Quit"),
-        Binding("e", "export", "Export URLs"),
-        Binding("i", "import", "Import URLs"),
-        Binding("d", "toggle_dark", "Dark"),
-        Binding("t", "change_theme", "Theme")
+        Binding("ctrl+q", "quit", "Quit"),
+        Binding("ctrl+e", "export", "Export URLs"),
+        Binding("ctrl+i", "import", "Import URLs"),
+        Binding("ctrl+d", "toggle_dark", "Dark"),
+        Binding("ctrl+t", "change_theme", "Theme")
         ]
 
     def __init__(self, config, urls, check_interval=30):
@@ -52,12 +73,26 @@ class PingDog(App):
         # self.mount(app_menu)
     
     def action_import(self) -> None:
-        table = self.query_one(DataTable)
-        table.add_row("Import action triggered!", "", "", "")
+        self.push_screen(
+            FileDialog(
+                label_text="Select file to import URLs from:",
+                select_type="file",
+                check_exists=True,
+                buttons=[("Import", "ok", "primary"), ("Cancel", "cancel", "error")]
+            ),
+            self.handle_file_dialog_import
+        )
 
     def action_export(self) -> None:
-        table = self.query_one(DataTable)
-        table.add_row("export action triggered!", "", "", "")
+        self.push_screen(
+            FileDialog(
+                label_text="Select file to export URLs to:",
+                select_type="file",
+                check_exists=False,
+                buttons=[("Export", "ok", "primary"), ("Cancel", "cancel", "error")]
+            ),
+            self.handle_file_dialog_export
+        )
 
     async def check_urls(self):
         async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context)) as session:
