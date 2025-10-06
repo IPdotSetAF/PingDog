@@ -7,7 +7,8 @@ import certifi
 import aiohttp
 from rich.text import Text
 from textual.app import App
-from textual.widgets import DataTable, Header
+from textual.binding import Binding
+from textual.widgets import DataTable, Header, Footer
 from config import PingDogConfig
 
 ssl_context = ssl.create_default_context(cafile=certifi.where())
@@ -19,7 +20,13 @@ def read_urls_from_file(file_path):
 
 
 class PingDog(App):
-    BINDINGS = [("q", "quit", "Quit")]
+    BINDINGS = [
+        Binding("q", "quit", "Quit"),
+        Binding("e", "export", "Export URLs"),
+        Binding("i", "import", "Import URLs"),
+        Binding("d", "toggle_dark", "Dark"),
+        Binding("t", "change_theme", "Theme")
+        ]
 
     def __init__(self, config, urls, check_interval=30):
         super().__init__()
@@ -32,8 +39,9 @@ class PingDog(App):
         self.config.theme = theme
 
     def compose(self):
-        yield Header()
+        yield Header(show_clock= True)
         yield DataTable()
+        yield Footer()
 
     async def on_mount(self):
         table = self.query_one(DataTable)
@@ -41,6 +49,15 @@ class PingDog(App):
         await self.check_urls()
         self.set_interval(self.check_interval, self.check_urls)
         self.theme = self.config.theme
+        # self.mount(app_menu)
+    
+    def action_import(self) -> None:
+        table = self.query_one(DataTable)
+        table.add_row("Import action triggered!", "", "", "")
+
+    def action_export(self) -> None:
+        table = self.query_one(DataTable)
+        table.add_row("export action triggered!", "", "", "")
 
     async def check_urls(self):
         async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context)) as session:
