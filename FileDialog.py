@@ -11,30 +11,14 @@ class FileDialog(ModalScreen):
         Binding("escape", "cancel", "Cancel", show=False),
     ]
 
-    # """
-    # #dialog {
-    #     width: 60%;
-    #     min-width: 40;
-    #     max-width: 80;
-    #     height: auto;
-    #     padding: 2 4;
-    #     border: round $primary;
-    #     background: $panel;
-    #     align-horizontal: center;
-    #     align-vertical: middle;
-    #     margin: 5;
-    #     content-align: center middle;
-    # }
-    # """
     CSS = """
-   
     #dialog {
         grid-size: 2;
         grid-gutter: 1 2;
         grid-rows: 1fr 3;
         padding: 0 1;
         width: 60;
-        height: 11;
+        height: 12;
         border: solid $accent;
         background: $surface;
     }
@@ -46,10 +30,11 @@ class FileDialog(ModalScreen):
         content-align: center middle;
     }
     
-    #file-input {
+    Input {
         column-span: 2;
+        width: 100%;
     }
-    
+
     Button {
         width: 100%;
     }
@@ -69,13 +54,19 @@ class FileDialog(ModalScreen):
         self.buttons = buttons or [("Cancel", "cancel", "error"), ("OK", "ok", "primary")]
 
     def compose(self) -> "ComposeResult":
+        if self.select_type == "file" :
+            placeholder = "/path/to/file"
+        elif self.select_type == "folder" :
+            placeholder = "/path/to/folder"
+        elif self.select_type == "both" :
+            placeholder = "/path/to/file-or-folder"
+        
         yield Grid(
             Label(self.label_text, id="question"),
-            Input(placeholder="/path/to/file-or-folder", id="file-input"),
+            Input(placeholder=placeholder, id="file-input"),
             *(Button(label, variant=variant, id=btn_id) for label, btn_id, variant in self.buttons),
             id="dialog"
         )
-
 
     def on_mount(self) -> None:
         self.styles.align_horizontal = "center"
@@ -121,6 +112,5 @@ class FileDialog(ModalScreen):
         self.dismiss({"value": value, "button": "ok"})
 
     def action_cancel(self) -> None:
-        """Cancel the dialog (used by Escape key)."""
         self.dismiss({"value": None, "button": "cancel"})
 
