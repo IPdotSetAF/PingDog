@@ -20,33 +20,12 @@ def read_urls_from_file(file_path):
         return [line.strip() for line in f if line.strip()]
 
 class PingDog(App):
-
-    def handle_file_dialog_import(self, result):
-        if result and result.get("button") == "ok" and result.get("value"):
-            file_path = result["value"]
-            try:
-                self.urls = read_urls_from_file(file_path)
-                self.update_table()
-                self.notify(f"Imported URLs from {file_path}")
-            except Exception as e:
-                self.notify(f"Failed to import: {e}", severity="error")
-
-    def handle_file_dialog_export(self, result):
-        if result and result.get("button") == "ok" and result.get("value"):
-            file_path = result["value"]
-            try:
-                with open(file_path, "w") as f:
-                    for url in self.urls:
-                        f.write(url + "\n")
-                self.notify(f"Exported URLs to {file_path}")
-            except Exception as e:
-                self.notify(f"Failed to export: {e}", severity="error")
     BINDINGS = [
         Binding("ctrl+q", "quit", "Quit"),
-        Binding("ctrl+e", "export", "Export URLs"),
-        Binding("ctrl+i", "import", "Import URLs"),
-        Binding("ctrl+d", "toggle_dark", "Dark"),
-        Binding("ctrl+t", "change_theme", "Theme")
+        Binding("e", "export", "Export URLs"),
+        Binding("i", "import", "Import URLs"),
+        Binding("d", "toggle_dark", "Dark"),
+        Binding("t", "change_theme", "Theme")
         ]
 
     def __init__(self, config, urls, check_interval=30):
@@ -70,7 +49,6 @@ class PingDog(App):
         await self.check_urls()
         self.set_interval(self.check_interval, self.check_urls)
         self.theme = self.config.theme
-        # self.mount(app_menu)
     
     def action_import(self) -> None:
         self.push_screen(
@@ -78,10 +56,20 @@ class PingDog(App):
                 label_text="Select file to import URLs from:",
                 select_type="file",
                 check_exists=True,
-                buttons=[("Import", "ok", "primary"), ("Cancel", "cancel", "error")]
+                buttons=[("Cancel", "cancel", "error"), ("Import", "ok", "primary")]
             ),
-            self.handle_file_dialog_import
+            self.import_urls
         )
+
+    def import_urls(self, filePath):
+        if filePath and filePath.get("button") == "ok" and filePath.get("value"):
+            file_path = filePath["value"]
+            try:
+                self.urls = read_urls_from_file(file_path)
+                self.update_table()
+                self.notify(f"Imported URLs from {file_path}")
+            except Exception as e:
+                self.notify(f"Failed to import: {e}", severity="error")
 
     def action_export(self) -> None:
         self.push_screen(
@@ -89,10 +77,21 @@ class PingDog(App):
                 label_text="Select file to export URLs to:",
                 select_type="file",
                 check_exists=False,
-                buttons=[("Export", "ok", "primary"), ("Cancel", "cancel", "error")]
+                buttons=[("Cancel", "cancel", "error"), ("Export", "ok", "primary")]
             ),
-            self.handle_file_dialog_export
+            self.export_urls
         )
+    
+    def export_urls(self, filePath):
+        if filePath and filePath.get("button") == "ok" and filePath.get("value"):
+            file_path = filePath["value"]
+            try:
+                with open(file_path, "w") as f:
+                    for url in self.urls:
+                        f.write(url + "\n")
+                self.notify(f"Exported URLs to {file_path}")
+            except Exception as e:
+                self.notify(f"Failed to export: {e}", severity="error")
 
     async def check_urls(self):
         async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context)) as session:
