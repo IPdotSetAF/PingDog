@@ -6,38 +6,28 @@ class PingDogCommands(Provider):
     def __init__(self, app: App, screen: Screen) -> None:
         super().__init__(app)
         self.commands = [
-            {
-                "name": "Import URLs",
-                "callback": self.app.action_import,
-                "help": "Import URLs from a file",
-                "discover": True,
-            },
-            {
-                "name": "Export URLs",
-                "callback": self.app.action_export,
-                "help": "Export URLs to a file",
-                "discover": True,
-            },
+            ("Import URLs", self.app.action_import, "Import URLs from a file", True),
+            ("Export URLs", self.app.action_export, "Export URLs to a file", True),
         ]
 
     async def discover(self) -> Hits:
-        for cmd in self.commands:
-            if cmd.get("discover", False):
+        for cmd, callback, help, discover in self.commands:
+            if discover:
                 yield Hit(
                     100,
-                    cmd["name"],
-                    partial(cmd["callback"]),
-                    help=cmd.get("help", ""),
+                    cmd,
+                    partial(callback),
+                    help=help,
                 )
     
     async def search(self, query: str) -> Hits:
         matcher = self.matcher(query)
-        for cmd in self.commands:
-            score = matcher.match(cmd["name"])
+        for cmd, callback, help, discover in self.commands:
+            score = matcher.match(cmd)
             if score > 0:
                 yield Hit(
                     score,
-                    matcher.highlight(cmd["name"]),
-                    partial(cmd["callback"]),
-                    help=cmd.get("help", ""),
+                    matcher.highlight(cmd),
+                    partial(callback),
+                    help=help,
                 )
