@@ -11,9 +11,9 @@ from textual.binding import Binding
 from textual.widgets import DataTable, Header, Footer
 from config import PingDogConfig
 from FileDialog import FileDialog
+from PingDogCommands import PingDogCommands
 
 ssl_context = ssl.create_default_context(cafile=certifi.where())
-
 
 def read_urls_from_file(file_path):
     with open(file_path, "r") as f:
@@ -22,11 +22,13 @@ def read_urls_from_file(file_path):
 class PingDog(App):
     BINDINGS = [
         Binding("ctrl+q", "quit", "Quit"),
-        Binding("e", "export", "Export URLs"),
         Binding("i", "import", "Import URLs"),
+        Binding("e", "export", "Export URLs"),
         Binding("d", "toggle_dark", "Dark"),
         Binding("t", "change_theme", "Theme")
         ]
+
+    COMMANDS = App.COMMANDS | {PingDogCommands}
 
     def __init__(self, config, urls, check_interval=30):
         super().__init__()
@@ -60,7 +62,7 @@ class PingDog(App):
             ),
             self.import_urls
         )
-
+        
     def import_urls(self, filePath):
         if filePath and filePath.get("button") == "ok" and filePath.get("value"):
             file_path = filePath["value"]
