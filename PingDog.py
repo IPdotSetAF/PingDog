@@ -7,19 +7,28 @@ import certifi
 import aiohttp
 from rich.text import Text
 from textual.app import App
-from textual.widgets import DataTable, Header
+from textual.binding import Binding
+from textual.widgets import DataTable, Header, Footer
 from config import PingDogConfig
+from FileDialog import FileDialog
+from PingDogCommands import PingDogCommands
 
 ssl_context = ssl.create_default_context(cafile=certifi.where())
-
 
 def read_urls_from_file(file_path):
     with open(file_path, "r") as f:
         return [line.strip() for line in f if line.strip()]
 
-
 class PingDog(App):
-    BINDINGS = [("q", "quit", "Quit")]
+    BINDINGS = [
+        Binding("ctrl+q", "quit", "Quit"),
+        Binding("i", "import", "Import URLs"),
+        Binding("e", "export", "Export URLs"),
+        Binding("d", "toggle_dark", "Dark"),
+        Binding("t", "change_theme", "Theme")
+        ]
+
+    COMMANDS = App.COMMANDS | {PingDogCommands}
 
     def __init__(self, config, urls, check_interval=30):
         super().__init__()
@@ -32,8 +41,9 @@ class PingDog(App):
         self.config.theme = theme
 
     def compose(self):
-        yield Header()
+        yield Header(show_clock= True)
         yield DataTable()
+        yield Footer()
 
     async def on_mount(self):
         table = self.query_one(DataTable)
@@ -41,6 +51,49 @@ class PingDog(App):
         await self.check_urls()
         self.set_interval(self.check_interval, self.check_urls)
         self.theme = self.config.theme
+    
+    def action_import(self) -> None:
+        self.push_screen(
+            FileDialog(
+                label_text="Select file to import URLs from:",
+                select_type="file",
+                check_exists=True,
+                buttons=[("Cancel", "cancel", "error"), ("Import", "ok", "primary")]
+            ),
+            self.import_urls
+        )
+        
+    def import_urls(self, filePath):
+        if filePath and filePath.get("button") == "ok" and filePath.get("value"):
+            file_path = filePath["value"]
+            try:
+                self.urls = read_urls_from_file(file_path)
+                self.update_table()
+                self.notify(f"Imported URLs from {file_path}")
+            except Exception as e:
+                self.notify(f"Failed to import: {e}", severity="error")
+
+    def action_export(self) -> None:
+        self.push_screen(
+            FileDialog(
+                label_text="Select file to export URLs to:",
+                select_type="file",
+                check_exists=False,
+                buttons=[("Cancel", "cancel", "error"), ("Export", "ok", "primary")]
+            ),
+            self.export_urls
+        )
+    
+    def export_urls(self, filePath):
+        if filePath and filePath.get("button") == "ok" and filePath.get("value"):
+            file_path = filePath["value"]
+            try:
+                with open(file_path, "w") as f:
+                    for url in self.urls:
+                        f.write(url + "\n")
+                self.notify(f"Exported URLs to {file_path}")
+            except Exception as e:
+                self.notify(f"Failed to export: {e}", severity="error")
 
     async def check_urls(self):
         async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context)) as session:
