@@ -25,7 +25,8 @@ class PingDog(App):
         Binding("i", "import", "Import URLs"),
         Binding("e", "export", "Export URLs"),
         Binding("d", "toggle_dark", "Dark"),
-        Binding("t", "change_theme", "Theme")
+        Binding("t", "change_theme", "Theme"),
+        Binding("delete", "delete_url", "Delete URL"),
         ]
 
     COMMANDS = App.COMMANDS | {PingDogCommands}
@@ -52,6 +53,16 @@ class PingDog(App):
         self.set_interval(self.check_interval, self.check_urls)
         self.theme = self.config.theme
     
+    def action_delete_url(self) -> None:
+        table = self.query_one(DataTable)
+        if table.cursor_row is not None:
+            url = table.get_row_at(table.cursor_row)[0].plain
+            if url in self.urls:
+                self.urls.remove(url)
+                self.metrics.pop(url, None)
+                self.update_table()
+                self.notify(f"Deleted URL: {url}")
+
     def action_import(self) -> None:
         self.push_screen(
             FileDialog(
