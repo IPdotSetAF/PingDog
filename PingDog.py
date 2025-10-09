@@ -13,6 +13,7 @@ from config import PingDogConfig
 from FileDialog import FileDialog
 from InputDialog import InputDialog
 from PingDogCommands import PingDogCommands
+from QuestionDialog import QuestionDialog
 
 ssl_context = ssl.create_default_context(cafile=certifi.where())
 
@@ -67,8 +68,16 @@ class PingDog(App):
 
     def action_delete_url(self) -> None:
         table = self.query_one(DataTable)
-        if table.cursor_row is not None:
-            self.delete_url(table.cursor_row)
+        row =  table.cursor_row
+        if row is not None:
+            url = self.urls[row]
+            self.push_screen(
+                QuestionDialog(
+                    label_text=f"Delete URL?\n{url}",
+                    buttons=[("No", "cancel", "error"), ("Yes", "ok", "primary")]
+                ),
+                lambda result: self.delete_url(row) if result and result.get("button") == "ok" else None
+            )
 
     def action_import(self) -> None:
         self.push_screen(
