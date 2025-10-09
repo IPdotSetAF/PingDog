@@ -1,7 +1,6 @@
 import os
 from textual.screen import ModalScreen
 from textual.containers import Grid
-from textual.message import Message
 from textual.app import ComposeResult
 from textual.widgets import Button, Input, Label
 from textual.binding import Binding
