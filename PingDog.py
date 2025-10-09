@@ -11,6 +11,7 @@ from textual.binding import Binding
 from textual.widgets import DataTable, Header, Footer
 from config import PingDogConfig
 from FileDialog import FileDialog
+from InputDialog import InputDialog
 from PingDogCommands import PingDogCommands
 
 ssl_context = ssl.create_default_context(cafile=certifi.where())
@@ -26,6 +27,7 @@ class PingDog(App):
         Binding("e", "export", "Export URLs"),
         Binding("d", "toggle_dark", "Dark"),
         Binding("t", "change_theme", "Theme"),
+        Binding("a", "add_url", "Add URL"),
         Binding("delete", "delete_url", "Delete URL"),
         ]
 
@@ -52,16 +54,21 @@ class PingDog(App):
         await self.check_urls()
         self.set_interval(self.check_interval, self.check_urls)
         self.theme = self.config.theme
-    
+
+    def action_add_url(self) -> None:
+        self.push_screen(
+            InputDialog(
+                label_text="Enter URL to add:",
+                placeholder="https://example.com",
+                buttons=[("Cancel", "cancel", "error"), ("Add", "ok", "primary")]
+            ),
+            lambda result: self.add_url(result["value"].strip()) if result and result.get("button") == "ok" and result.get("value") else None
+        )
+
     def action_delete_url(self) -> None:
         table = self.query_one(DataTable)
         if table.cursor_row is not None:
-            url = table.get_row_at(table.cursor_row)[0].plain
-            if url in self.urls:
-                self.urls.remove(url)
-                self.metrics.pop(url, None)
-                self.update_table()
-                self.notify(f"Deleted URL: {url}")
+            self.delete_url(table.cursor_row)
 
     def action_import(self) -> None:
         self.push_screen(
@@ -74,16 +81,6 @@ class PingDog(App):
             self.import_urls
         )
         
-    def import_urls(self, filePath):
-        if filePath and filePath.get("button") == "ok" and filePath.get("value"):
-            file_path = filePath["value"]
-            try:
-                self.urls = read_urls_from_file(file_path)
-                self.update_table()
-                self.notify(f"Imported URLs from {file_path}")
-            except Exception as e:
-                self.notify(f"Failed to import: {e}", severity="error")
-
     def action_export(self) -> None:
         self.push_screen(
             FileDialog(
@@ -95,6 +92,31 @@ class PingDog(App):
             self.export_urls
         )
     
+    def add_url(self, url: str):
+        if url and url not in self.urls:
+            self.urls.append(url)
+            self.update_table()
+            self.notify(f"Added URL: {url}")
+        elif url in self.urls:
+            self.notify(f"URL already exists: {url}", severity="warning")
+
+    def delete_url(self, index: int):
+        if 0 <= index < len(self.urls):
+            url = self.urls.pop(index)
+            self.metrics.pop(url, None)
+            self.update_table()
+            self.notify(f"Deleted URL: {url}")
+
+    def import_urls(self, filePath):
+        if filePath and filePath.get("button") == "ok" and filePath.get("value"):
+            file_path = filePath["value"]
+            try:
+                self.urls = read_urls_from_file(file_path)
+                self.update_table()
+                self.notify(f"Imported URLs from {file_path}")
+            except Exception as e:
+                self.notify(f"Failed to import: {e}", severity="error")
+
     def export_urls(self, filePath):
         if filePath and filePath.get("button") == "ok" and filePath.get("value"):
             file_path = filePath["value"]
