@@ -228,8 +228,8 @@ if __name__ == "__main__":
         "-i",
         "--interval",
         type=int,
-        default=30,
-        help="Check interval in seconds (default: 30)",
+        default=5,
+        help="Check interval in seconds (default: 5)",
     )
     args = parser.parse_args()
 
@@ -244,10 +244,6 @@ if __name__ == "__main__":
             exit(1)
     else:
         urls = args.urls
-
-    if not urls:
-        print("No valid URLs provided (use -f FILE or provide URLs as arguments)")
-        exit(1)
 
     app = PingDog(PingDogConfig("config.yml"), urls, args.interval)
     app.run()
