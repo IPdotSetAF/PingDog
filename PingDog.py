@@ -245,5 +245,7 @@ if __name__ == "__main__":
     else:
         urls = args.urls
 
-    app = PingDog(PingDogConfig("config.yml"), urls, args.interval)
+    config_path = Path.home() / ".pingdog" / "config.yml"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    app = PingDog(PingDogConfig(str(config_path)), urls, args.interval)
     app.run()
