@@ -2,8 +2,9 @@ import os
 from textual.screen import ModalScreen
 from textual.containers import Grid
 from textual.app import ComposeResult
-from textual.widgets import Button, Input, Label
+from textual.widgets import Button, Input, Label, DirectoryTree
 from textual.binding import Binding
+from textual.reactive import reactive
 
 
 class QuestionDialog(ModalScreen):
@@ -144,10 +145,10 @@ class FileDialog(ModalScreen):
     #dialog {
         grid-size: 2;
         grid-gutter: 1 2;
-        grid-rows: 1fr 3;
+        grid-rows: 1fr 1fr 3;
         padding: 0 1;
         width: 60;
-        height: 12;
+        height: 24;
         border: solid $accent;
         background: $surface;
     }
@@ -159,9 +160,18 @@ class FileDialog(ModalScreen):
         content-align: center middle;
     }
     
-    Input {
+    #file-input {
         column-span: 2;
         width: 100%;
+    }
+
+    #dir-tree {
+        row-span: 3;
+        column-span: 2;
+        width: 100%;
+        border: solid $primary 10%;
+        background: $boost;
+        overflow: auto;
     }
 
     Button {
@@ -169,18 +179,22 @@ class FileDialog(ModalScreen):
     }
     """
 
-    def __init__(self, label_text="Enter file path:", select_type="file", check_exists=False, buttons=None, **kwargs):
+    selected_path = reactive("")
+
+    def __init__(self, label_text="Enter file path:", select_type="file", check_exists=False, buttons=None, start_path=None, **kwargs):
         """
         label_text: str, label to display above input
         select_type: 'file', 'folder', or 'both'
         check_exists: bool, if True, check existence before accepting
         buttons: list of (label, id, variant) tuples, e.g. [("OK", "ok", "primary"), ("Cancel", "cancel", "error")]
+        start_path: str, initial directory for DirectoryTree
         """
         super().__init__(**kwargs)
         self.label_text = label_text
         self.select_type = select_type
         self.check_exists = check_exists
         self.buttons = buttons or [("Cancel", "cancel", "error"), ("OK", "ok", "primary")]
+        self.start_path = start_path or os.path.expanduser("~")
 
     def compose(self) -> "ComposeResult":
         if self.select_type == "file" :
@@ -192,6 +206,7 @@ class FileDialog(ModalScreen):
         
         yield Grid(
             Label(self.label_text, id="question"),
+            DirectoryTree(self.start_path, id="dir-tree"),
             Input(placeholder=placeholder, id="file-input"),
             *(Button(label, variant=variant, id=btn_id) for label, btn_id, variant in self.buttons),
             id="dialog"
@@ -200,12 +215,26 @@ class FileDialog(ModalScreen):
     def on_mount(self) -> None:
         self.styles.align_horizontal = "center"
         self.styles.align_vertical = "middle"
+        # Set input to selected_path if set
+        if self.selected_path:
+            self.query_one("#file-input", Input).value = self.selected_path
 
+    def on_directory_tree_file_selected(self, event: DirectoryTree.FileSelected) -> None:
+        # Only allow file selection if select_type is file or both
+        if self.select_type in ("file", "both"):
+            self.selected_path = event.path
+            self.query_one("#file-input", Input).value = str(event.path)
+
+    def on_directory_tree_directory_selected(self, event: DirectoryTree.DirectorySelected) -> None:
+        # Only allow folder selection if select_type is folder or both
+        if self.select_type in ("folder", "both"):
+            self.selected_path = event.path
+            self.query_one("#file-input", Input).value = str(event.path)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         btn_id = event.button.id
+        value = self.query_one("#file-input").value
         if btn_id == "ok":
-            value = self.query_one("#file-input").value
             if self.check_exists:
                 if self.select_type == "file" and not os.path.isfile(value):
                     self.app.bell()
