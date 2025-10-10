@@ -10,10 +10,8 @@ from textual.app import App
 from textual.binding import Binding
 from textual.widgets import DataTable, Header, Footer
 from config import PingDogConfig
-from FileDialog import FileDialog
-from InputDialog import InputDialog
+from Dialogs import QuestionDialog, InputDialog, FileDialog 
 from PingDogCommands import PingDogCommands
-from QuestionDialog import QuestionDialog
 
 ssl_context = ssl.create_default_context(cafile=certifi.where())
 
