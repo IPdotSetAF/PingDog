@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import time
+import os
 from pathlib import Path
 import ssl
 import certifi
@@ -10,10 +11,8 @@ from textual.app import App
 from textual.binding import Binding
 from textual.widgets import DataTable, Header, Footer
 from config import PingDogConfig
-from FileDialog import FileDialog
-from InputDialog import InputDialog
+from Dialogs import QuestionDialog, InputDialog, FileDialog 
 from PingDogCommands import PingDogCommands
-from QuestionDialog import QuestionDialog
 
 ssl_context = ssl.create_default_context(cafile=certifi.where())
 
@@ -85,7 +84,8 @@ class PingDog(App):
                 label_text="Select file to import URLs from:",
                 select_type="file",
                 check_exists=True,
-                buttons=[("Cancel", "cancel", "error"), ("Import", "ok", "primary")]
+                buttons=[("Cancel", "cancel", "error"), ("Import", "ok", "primary")],
+                start_path=os.path.curdir
             ),
             self.import_urls
         )
@@ -96,7 +96,8 @@ class PingDog(App):
                 label_text="Select file to export URLs to:",
                 select_type="file",
                 check_exists=False,
-                buttons=[("Cancel", "cancel", "error"), ("Export", "ok", "primary")]
+                buttons=[("Cancel", "cancel", "error"), ("Export", "ok", "primary")],
+                start_path=os.path.curdir
             ),
             self.export_urls
         )
