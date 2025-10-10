@@ -51,7 +51,7 @@ class PingDog(App):
 
     async def on_mount(self):
         table = self.query_one(DataTable)
-        table.add_columns("URL", "Status", "Response Time", "Last Checked")
+        table.add_columns(*self.columns)
         await self.check_urls()
         self.set_interval(self.check_interval, self.check_urls)
         self.theme = self.config.theme
@@ -113,6 +113,8 @@ class PingDog(App):
         if 0 <= index < len(self.urls):
             url = self.urls.pop(index)
             self.metrics.pop(url, None)
+            table = self.query_one(DataTable)
+            table.remove_row(url)
             self.update_table()
             self.notify(f"Deleted URL: {url}")
 
@@ -165,10 +167,21 @@ class PingDog(App):
                 "last_checked": start_time,
             }
 
+    columns = [
+        ("URL", "url"),
+        ("Status", "status"),
+        ("Response Time", "response_time"),
+        ("Last Checked", "last_checked")
+    ]
+
     def update_table(self):
         table = self.query_one(DataTable)
-        table.clear(columns=True)
-        table.add_columns("URL", "Status", "Response Time", "Last Checked")
+        # If table is empty or number of rows doesn't match, reinitialize
+        if len(table.rows) != len(self.urls):
+            table.clear(columns=True)
+            table.add_columns(*self.columns)
+            for url in self.urls:
+                table.add_row(Text(url), Text("N/A"), Text("N/A"), Text("N/A"), key=url)
 
         for url in self.urls:
             metrics = self.metrics.get(url, {})
@@ -177,7 +190,6 @@ class PingDog(App):
             response_time = metrics.get("response_time")
             last_checked = metrics.get("last_checked")
 
-            # Create styled status text
             if error:
                 status_text = Text(f"Error: {error}", style="red")
             else:
@@ -187,26 +199,18 @@ class PingDog(App):
                     style = "yellow" if 400 <= (status or 0) < 500 else "red"
                 status_text = Text(str(status), style=style) if status else Text("N/A")
 
-            # Format response time
-            response_time_str = (
+            response_text = Text((
                 f"{response_time:.2f}s" if response_time is not None else "N/A"
-            )
-            response_text = Text(response_time_str)
-
-            # Format last checked time
-            last_checked_str = (
+            ))
+            last_checked_text = Text((
                 time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(last_checked))
                 if last_checked
                 else "N/A"
-            )
-            last_checked_text = Text(last_checked_str)
+            ))
 
-            table.add_row(
-                Text(url),
-                status_text,
-                response_text,
-                last_checked_text,
-            )
+            table.update_cell(url, "status", status_text, update_width=True)
+            table.update_cell(url, "response_time", response_text, update_width=True)
+            table.update_cell(url, "last_checked", last_checked_text, update_width=True)
 
 
 if __name__ == "__main__":
