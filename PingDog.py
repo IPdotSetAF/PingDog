@@ -18,7 +18,7 @@ ssl_context = ssl.create_default_context(cafile=certifi.where())
 
 def read_urls_from_file(file_path):
     with open(file_path, "r") as f:
-        return [line.strip() for line in f if line.strip()]
+        return list(dict.fromkeys([line.strip() for line in f if line.strip()])) 
 
 class PingDog(App):
     BINDINGS = [
@@ -104,7 +104,7 @@ class PingDog(App):
     
     def add_url(self, url: str):
         if url and url not in self.urls:
-            self.urls.append(url)
+            self.urls.append(url) # Ensure distinct URLs
             self.update_table()
             self.notify(f"Added URL: {url}")
         elif url in self.urls:
@@ -248,7 +248,7 @@ if __name__ == "__main__":
             print(f"Error reading file: {e}")
             exit(1)
     else:
-        urls = args.urls
+        urls = list(dict.fromkeys(args.urls))
 
     config_path = Path.home() / ".pingdog" / "config.yml"
     config_path.parent.mkdir(parents=True, exist_ok=True)
