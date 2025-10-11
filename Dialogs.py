@@ -1,4 +1,4 @@
-import os
+from os import path
 from textual.screen import ModalScreen
 from textual.containers import Grid
 from textual.app import ComposeResult
@@ -194,7 +194,7 @@ class FileDialog(ModalScreen):
         self.select_type = select_type
         self.check_exists = check_exists
         self.buttons = buttons or [("Cancel", "cancel", "error"), ("OK", "ok", "primary")]
-        self.start_path = start_path or os.path.expanduser("~")
+        self.start_path = start_path or path.expanduser("~")
 
     def compose(self) -> "ComposeResult":
         if self.select_type == "file" :
@@ -236,15 +236,15 @@ class FileDialog(ModalScreen):
         value = self.query_one("#file-input").value
         if btn_id == "ok":
             if self.check_exists:
-                if self.select_type == "file" and not os.path.isfile(value):
+                if self.select_type == "file" and not path.isfile(value):
                     self.app.bell()
                     self.query_one("#question", Label).update(f"File does not exist: {value}")
                     return
-                elif self.select_type == "folder" and not os.path.isdir(value):
+                elif self.select_type == "folder" and not path.isdir(value):
                     self.app.bell()
                     self.query_one("#question", Label).update(f"Folder does not exist: {value}")
                     return
-                elif self.select_type == "both" and not (os.path.isfile(value) or os.path.isdir(value)):
+                elif self.select_type == "both" and not (path.isfile(value) or path.isdir(value)):
                     self.app.bell()
                     self.query_one("#question", Label).update(f"File or folder does not exist: {value}")
                     return
@@ -255,15 +255,15 @@ class FileDialog(ModalScreen):
     def on_input_submitted(self, event: Input.Submitted) -> None:
         value = self.query_one("#file-input").value
         if self.check_exists:
-            if self.select_type == "file" and not os.path.isfile(value):
+            if self.select_type == "file" and not path.isfile(value):
                 self.app.bell()
                 self.query_one("#question", Label).update(f"File does not exist: {value}")
                 return
-            elif self.select_type == "folder" and not os.path.isdir(value):
+            elif self.select_type == "folder" and not path.isdir(value):
                 self.app.bell()
                 self.query_one("#question", Label).update(f"Folder does not exist: {value}")
                 return
-            elif self.select_type == "both" and not (os.path.isfile(value) or os.path.isdir(value)):
+            elif self.select_type == "both" and not (path.isfile(value) or path.isdir(value)):
                 self.app.bell()
                 self.query_one("#question", Label).update(f"File or folder does not exist: {value}")
                 return

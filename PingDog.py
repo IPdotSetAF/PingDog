@@ -1,7 +1,7 @@
 import argparse
 import asyncio
 import time
-import os
+from  os import path
 from pathlib import Path
 import ssl
 import certifi
@@ -85,9 +85,9 @@ class PingDog(App):
                 select_type="file",
                 check_exists=True,
                 buttons=[("Cancel", "cancel", "error"), ("Import", "ok", "primary")],
-                start_path=os.path.curdir
+                start_path=path.curdir
             ),
-            self.import_urls
+            lambda result: self.import_urls(result["value"]) if result and result.get("button") == "ok" and result.get("value") else None
         )
         
     def action_export(self) -> None:
@@ -97,9 +97,9 @@ class PingDog(App):
                 select_type="file",
                 check_exists=False,
                 buttons=[("Cancel", "cancel", "error"), ("Export", "ok", "primary")],
-                start_path=os.path.curdir
+                start_path=path.curdir
             ),
-            self.export_urls
+            lambda result: self.export_urls(result["value"]) if result and result.get("button") == "ok" and result.get("value") else None
         )
     
     def add_url(self, url: str):
@@ -120,25 +120,21 @@ class PingDog(App):
             self.notify(f"Deleted URL: {url}")
 
     def import_urls(self, filePath):
-        if filePath and filePath.get("button") == "ok" and filePath.get("value"):
-            file_path = filePath["value"]
-            try:
-                self.urls = read_urls_from_file(file_path)
-                self.update_table()
-                self.notify(f"Imported URLs from {file_path}")
-            except Exception as e:
-                self.notify(f"Failed to import: {e}", severity="error")
+        try:
+            self.urls = read_urls_from_file(filePath)
+            self.update_table()
+            self.notify(f"Imported URLs from {filePath}")
+        except Exception as e:
+            self.notify(f"Failed to import: {e}", severity="error")
 
     def export_urls(self, filePath):
-        if filePath and filePath.get("button") == "ok" and filePath.get("value"):
-            file_path = filePath["value"]
-            try:
-                with open(file_path, "w") as f:
-                    for url in self.urls:
-                        f.write(url + "\n")
-                self.notify(f"Exported URLs to {file_path}")
-            except Exception as e:
-                self.notify(f"Failed to export: {e}", severity="error")
+        try:
+            with open(filePath, "w") as f:
+                for url in self.urls:
+                    f.write(url + "\n")
+            self.notify(f"Exported URLs to {filePath}")
+        except Exception as e:
+            self.notify(f"Failed to export: {e}", severity="error")
 
     async def check_urls(self):
         async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context)) as session:
