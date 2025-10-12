@@ -1,8 +1,8 @@
 from os import path
 from textual.screen import ModalScreen
-from textual.containers import Grid
+from textual.containers import Grid, Container
 from textual.app import ComposeResult
-from textual.widgets import Button, Input, Label, DirectoryTree, ListView, ListItem
+from textual.widgets import Button, Input, Label, DirectoryTree, ListView, ListItem, Static
 from textual.binding import Binding
 from textual.reactive import reactive
 
@@ -281,24 +281,14 @@ class ListDialog(ModalScreen):
 
     CSS = """
     #dialog {
-        grid-size: 1;
-        grid-gutter: 1 2;
-        padding: 0 1;
+        padding: 1 2;
         width: 60;
-        height: 15;
+        height: 18;
         border: solid $accent;
-        background: $surface;
-    }
-    
-    #question {
-        height: 1fr;
-        content-align: center middle;
     }
 
     ListView {
-        width: 100%;
-        border: solid $primary 10%;
-        background: $boost;
+        border: solid $primary 40%;
     }
     """
 
@@ -321,9 +311,9 @@ class ListDialog(ModalScreen):
                 label, value = str(opt), opt
             items.append(ListItem(Label(label), id=f"item-{value}"))
 
-        yield Grid(
-            Label(self.label_text, id="question"),
-            ListView(*items, id="list-dialog-list"),
+        yield Container(
+            Static(self.label_text, id="question"),
+            ListView(*items, id="options-list"),
             id="dialog"
         )
 
@@ -338,7 +328,7 @@ class ListDialog(ModalScreen):
         self.dismiss({"value": value, "button": "ok"})
 
     def action_select(self) -> None:
-        idx = self.query_one("#list-dialog-list", ListView).index
+        idx = self.query_one("#options-list", ListView).index
         value = self._get_option_value(idx)
         self.dismiss({"value": value, "button": "ok"})
 
