@@ -2,7 +2,7 @@ from os import path
 from textual.screen import ModalScreen
 from textual.containers import Grid
 from textual.app import ComposeResult
-from textual.widgets import Button, Input, Label, DirectoryTree
+from textual.widgets import Button, Input, Label, DirectoryTree, ListView, ListItem
 from textual.binding import Binding
 from textual.reactive import reactive
 
@@ -271,3 +271,82 @@ class FileDialog(ModalScreen):
 
     def action_cancel(self) -> None:
         self.dismiss({"value": None, "button": "cancel"})
+
+
+class ListDialog(ModalScreen):
+    BINDINGS = [
+        Binding("escape", "cancel", "Cancel", show=False),
+        Binding("enter", "select", "Select", show=False),
+    ]
+
+    CSS = """
+    #dialog {
+        grid-size: 1;
+        grid-gutter: 1 2;
+        padding: 0 1;
+        width: 60;
+        height: 15;
+        border: solid $accent;
+        background: $surface;
+    }
+    
+    #question {
+        height: 1fr;
+        content-align: center middle;
+    }
+
+    ListView {
+        width: 100%;
+        border: solid $primary 10%;
+        background: $boost;
+    }
+    """
+
+    def __init__(self, label_text="Choose an option:", options=None, **kwargs):
+        """
+        label_text: str, label to display above list
+        options: list of str or (label, value) tuples
+        buttons: list of (label, id, variant) tuples, e.g. [("Cancel", "cancel", "error"), ("OK", "ok", "primary")]
+        """
+        super().__init__(**kwargs)
+        self.label_text = label_text
+        self.options = options or []
+
+    def compose(self) -> ComposeResult:
+        items = []
+        for opt in self.options:
+            if isinstance(opt, tuple):
+                label, value = opt
+            else:
+                label, value = str(opt), opt
+            items.append(ListItem(Label(label), id=f"item-{value}"))
+
+        yield Grid(
+            Label(self.label_text, id="question"),
+            ListView(*items, id="list-dialog-list"),
+            id="dialog"
+        )
+
+    def on_mount(self) -> None:
+        self.styles.align_horizontal = "center"
+        self.styles.align_vertical = "middle"
+
+    def on_list_view_selected(self, event: ListView.Selected) -> None:
+        # When user selects an item (via enter or click)
+        idx = event.index
+        value = self._get_option_value(idx)
+        self.dismiss({"value": value, "button": "ok"})
+
+    def action_select(self) -> None:
+        idx = self.query_one("#list-dialog-list", ListView).index
+        value = self._get_option_value(idx)
+        self.dismiss({"value": value, "button": "ok"})
+
+    def action_cancel(self) -> None:
+        self.dismiss({"value": None, "button": "cancel"})
+
+    def _get_option_value(self, idx):
+        opt = self.options[idx]
+        if isinstance(opt, tuple):
+            return opt[1]
+        return opt

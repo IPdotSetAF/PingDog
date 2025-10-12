@@ -11,7 +11,7 @@ from textual.app import App
 from textual.binding import Binding
 from textual.widgets import DataTable, Header, Footer
 from config import PingDogConfig
-from Dialogs import QuestionDialog, InputDialog, FileDialog 
+from Dialogs import QuestionDialog, InputDialog, FileDialog , ListDialog
 from PingDogCommands import PingDogCommands
 
 ssl_context = ssl.create_default_context(cafile=certifi.where())
@@ -79,6 +79,25 @@ class PingDog(App):
             )
 
     def action_import(self) -> None:
+        def confirm(result): 
+            if result and result.get("button") == "ok" and result.get("value") :
+                if len(self.urls) == 0 :
+                    self.import_urls(result["value"]) 
+                else :
+                    self.push_screen(
+                        ListDialog(
+                            label_text="There are URLs already in your workspace. How do you want to import new URLs?",
+                            options=[
+                                ("Cancel", "cancel"),
+                                ("Open (replace)", "open"),
+                                ("Append", "append"),
+                            ],
+                        ),
+                        lambda res: self.import_urls(result["value"]) if res and res.get("value") == "open"
+                        else self.import_urls(result["value"], True) if res and res.get("value") == "append"
+                        else None
+                    )
+
         self.push_screen(
             FileDialog(
                 label_text="Select file to import URLs from:",
@@ -86,8 +105,7 @@ class PingDog(App):
                 check_exists=True,
                 buttons=[("Cancel", "cancel", "error"), ("Import", "ok", "primary")],
                 start_path=path.curdir
-            ),
-            lambda result: self.import_urls(result["value"]) if result and result.get("button") == "ok" and result.get("value") else None
+            ), confirm
         )
         
     def action_export(self) -> None:
@@ -119,9 +137,12 @@ class PingDog(App):
             self.update_table()
             self.notify(f"Deleted URL: {url}")
 
-    def import_urls(self, filePath):
+    def import_urls(self, filePath, append=False):
         try:
-            self.urls = read_urls_from_file(filePath)
+            if append:
+                self.urls = list(dict.fromkeys(self.urls + read_urls_from_file(filePath)))
+            else:
+                self.urls = read_urls_from_file(filePath)
             self.update_table()
             self.notify(f"Imported URLs from {filePath}")
         except Exception as e:
