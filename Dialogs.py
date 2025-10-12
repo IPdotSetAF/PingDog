@@ -273,7 +273,7 @@ class FileDialog(ModalScreen):
         self.dismiss({"value": None, "button": "cancel"})
 
 
-class ListDialog(ModalScreen):
+class OptionDialog(ModalScreen):
     BINDINGS = [
         Binding("escape", "cancel", "Cancel", show=False),
         Binding("enter", "select", "Select", show=False),
@@ -325,15 +325,15 @@ class ListDialog(ModalScreen):
         # When user selects an item (via enter or click)
         idx = event.index
         value = self._get_option_value(idx)
-        self.dismiss({"value": value, "button": "ok"})
+        self.dismiss(value)
 
     def action_select(self) -> None:
         idx = self.query_one("#options-list", ListView).index
         value = self._get_option_value(idx)
-        self.dismiss({"value": value, "button": "ok"})
+        self.dismiss(value)
 
     def action_cancel(self) -> None:
-        self.dismiss({"value": None, "button": "cancel"})
+        self.dismiss(None)
 
     def _get_option_value(self, idx):
         opt = self.options[idx]

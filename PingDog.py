@@ -11,7 +11,7 @@ from textual.app import App
 from textual.binding import Binding
 from textual.widgets import DataTable, Header, Footer
 from config import PingDogConfig
-from Dialogs import QuestionDialog, InputDialog, FileDialog , ListDialog
+from Dialogs import QuestionDialog, InputDialog, FileDialog , OptionDialog
 from PingDogCommands import PingDogCommands
 
 ssl_context = ssl.create_default_context(cafile=certifi.where())
@@ -85,7 +85,7 @@ class PingDog(App):
                     self.import_urls(result["value"]) 
                 else :
                     self.push_screen(
-                        ListDialog(
+                        OptionDialog(
                             label_text="There are URLs already in your workspace. How do you want to import new URLs?",
                             options=[
                                 ("Cancel", "cancel"),
@@ -93,8 +93,8 @@ class PingDog(App):
                                 ("Append", "append"),
                             ],
                         ),
-                        lambda res: self.import_urls(result["value"]) if res and res.get("value") == "open"
-                        else self.import_urls(result["value"], True) if res and res.get("value") == "append"
+                        lambda res: self.import_urls(result["value"]) if res == "open"
+                        else self.import_urls(result["value"], True) if res == "append"
                         else None
                     )
 
