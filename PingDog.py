@@ -11,7 +11,7 @@ from textual.app import App
 from textual.binding import Binding
 from textual.widgets import DataTable, Header, Footer
 from config import PingDogConfig
-from Dialogs import QuestionDialog, InputDialog, FileDialog , OptionDialog, OK_CANCEL
+from Dialogs import QuestionDialog, InputDialog, FileDialog , OptionDialog
 from PingDogCommands import PingDogCommands
 
 ssl_context = ssl.create_default_context(cafile=certifi.where())
@@ -58,7 +58,8 @@ class PingDog(App):
     def action_add_url(self) -> None:
         self.push_screen(
             InputDialog(
-                label_text="Enter URL to add:",
+                text="Enter URL to add:",
+                title="Add URL",
                 placeholder="https://example.com",
                 buttons=[("Cancel", "neutral", "error"), ("Add", "positive", "primary")]
             ),
@@ -72,8 +73,9 @@ class PingDog(App):
             url = self.urls[row]
             self.push_screen(
                 QuestionDialog(
-                    label_text=f"Delete URL?\n{url}",
-                    buttons=[("Cancel", "neutral", "primary"), ("OK", "positive", "error")]
+                    text=f"Delete URL?\n{url}",
+                    title="Confirm Deletion",
+                    buttons=[("Cancel", "neutral", "primary"), ("Delete", "positive", "error")]
                 ),
                 lambda result: self.delete_url(row) if result else None
             )
@@ -86,7 +88,8 @@ class PingDog(App):
                 else :
                     self.push_screen(
                         OptionDialog(
-                            label_text="There are URLs already in your workspace. How do you want to import new URLs?",
+                            text="There are URLs already in your workspace. How do you want to import new URLs?",
+                            title="Import URLs Options",
                             options=[
                                 ("Cancel", "cancel"),
                                 ("Open (replace)", "open"),
@@ -100,7 +103,8 @@ class PingDog(App):
 
         self.push_screen(
             FileDialog(
-                label_text="Select file to import URLs from:",
+                text="Select file to import URLs from:",
+                title="Import URLs",
                 select_type="file",
                 check_exists=True,
                 buttons=[("Cancel", "neutral", "error"), ("Import", "positive", "primary")],
@@ -111,7 +115,8 @@ class PingDog(App):
     def action_export(self) -> None:
         self.push_screen(
             FileDialog(
-                label_text="Select file to export URLs to:",
+                text="Select file to export URLs to:",
+                title="Export URLs",
                 select_type="file",
                 check_exists=False,
                 buttons=[("Cancel", "neutral", "error"), ("Export", "positive", "primary")],

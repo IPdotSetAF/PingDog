@@ -19,44 +19,37 @@ class QuestionDialog(ModalScreen):
         Binding("escape", "neutral", "Cancel", show=False),
     ]
 
+    CSS_PATH="Dialogs.tcss"
     CSS = """
     #dialog {
-        grid-size: 2;
-        grid-gutter: 1 2;
-        grid-rows: 1fr 3;
-        padding: 0 1;
+        padding: 1 2;
         width: 60;
-        height: 8;
+        height: 11;
         border: solid $accent;
         background: $surface;
-    }
-        
-    #question {
-        column-span: 2;
-        height: 1fr;
-        width: 1fr;
-    }
-
-    Button {
-        width: 100%;
+        border_title_align: center;
     }
     """
 
-    def __init__(self, label_text="Are you sure?", buttons=YES_NO, **kwargs):
+    def __init__(self, text="Are you sure?", title="Dialog", buttons=YES_NO, **kwargs):
         """
-        label_text: str, label to display above
+        text: str, label to display above
+        title: str, dialog window title (shown in border)
         buttons: list of (label, id, variant) tuples, e.g. [("Cancel", "cancel", "error"), ("OK", "ok", "primary")]
         """
         super().__init__(**kwargs)
-        self.label_text = label_text
+        self.text = text
+        self.title = title
         self.buttons = buttons 
 
     def compose(self) -> ComposeResult:
-        yield Grid(
-            Label(self.label_text, id="question"),
-            *(Button(label, variant=variant, id=action) for label, action, variant in self.buttons),
+        container = Container(
+            Static(self.text),
+            Grid(*(Button(label, variant=variant, id=action) for label, action, variant in self.buttons), classes=f"btn-grid btn-grid-{len(self.buttons)}"),
             id="dialog"
         )
+        container.border_title = self.title
+        yield container
 
     def on_mount(self) -> None:
         self.styles.align_horizontal = "center"
@@ -80,52 +73,44 @@ class InputDialog(ModalScreen):
         Binding("escape", "neutral", "Cancel", show=False),
     ]
 
+    CSS_PATH="Dialogs.tcss"
     CSS = """
      #dialog {
-        grid-size: 2;
-        grid-gutter: 1 2;
-        grid-rows: 1fr 3;
-        padding: 0 1;
+        padding: 1 2;
         width: 60;
-        height: 12;
+        height: 14;
         border: solid $accent;
         background: $surface;
-    }
-        
-    #question {
-        column-span: 2;
-        height: 1fr;
-        width: 1fr;
+        border_title_align: center;
     }
     
     Input {
-        column-span: 2;
-        width: 100%;
-    }
-
-    Button {
-        width: 100%;
+        margin: 1 0;
     }
     """
 
-    def __init__(self, label_text="Enter value:", placeholder="", buttons=OK_CANCEL, **kwargs):
+    def __init__(self, text="Enter value:", title="Dialog", placeholder="", buttons=OK_CANCEL, **kwargs):
         """
-        label_text: str, label to display above input
+        text: str, label to display above input
+        title: str, dialog window title (shown in border)
         placeholder: str, placeholder text for input
         buttons: list of (label, action, variant) tuples or use predefined buttons: e.g. OK_CANCEL
         """
         super().__init__(**kwargs)
-        self.label_text = label_text
+        self.text = text
+        self.title = title
         self.placeholder = placeholder
         self.buttons = buttons
 
     def compose(self) -> ComposeResult:
-        yield Grid(
-            Label(self.label_text, id="question"),
+        container = Container(
+            Static(self.text),
             Input(placeholder=self.placeholder, id="input-dialog-input"),
-            *(Button(label, variant=variant, id=action) for label, action, variant in self.buttons),
+            Grid(*(Button(label, variant=variant, id=action) for label, action, variant in self.buttons), classes=f"btn-grid btn-grid-{len(self.buttons)}"),
             id="dialog"
         )
+        container.border_title = self.title
+        yield container
 
     def on_mount(self) -> None:
         self.styles.align_horizontal = "center"
@@ -152,12 +137,15 @@ class FileDialog(ModalScreen):
         Binding("escape", "neutral", "Cancel", show=False),
     ]
 
+    CSS_PATH="Dialogs.tcss"
     CSS = """
     #dialog {
         padding: 1 2 0 2;
-        width: 60;
+        width: 70;
         height: 26;
         border: solid $accent;
+        background: $surface;
+        border_title_align: center;
     }
         
     #dir-tree {
@@ -168,30 +156,22 @@ class FileDialog(ModalScreen):
         overflow: auto;
         margin: 1 0;
     }
-
-    .btn-grid-2 {
-        margin: 1 0;
-        grid-size: 2 1;
-        grid-gutter: 2 1;
-    }
-
-    Button {
-        width: 100%;
-    }
     """
 
     selected_path = reactive("")
 
-    def __init__(self, label_text="Enter file path:", select_type="file", check_exists=False, buttons=OPEN_CANCEL, start_path=None, **kwargs):
+    def __init__(self, text="Enter file path:", title="Dialog", select_type="file", check_exists=False, buttons=OPEN_CANCEL, start_path=None, **kwargs):
         """
-        label_text: str, label to display above input
+        text: str, label to display above input
+        title: str, dialog window title (shown in border)
         select_type: 'file', 'folder', or 'both'
         check_exists: bool, if True, check existence before accepting
         buttons: list of (label, action, variant) tuples or use predefined buttons: e.g. OK_CANCEL
         start_path: str, initial directory for DirectoryTree
         """
         super().__init__(**kwargs)
-        self.label_text = label_text
+        self.text = text
+        self.title = title
         self.select_type = select_type
         self.check_exists = check_exists
         self.buttons = buttons 
@@ -204,13 +184,15 @@ class FileDialog(ModalScreen):
             self.placeholder = "/path/to/file-or-folder"
 
     def compose(self) -> "ComposeResult":
-        yield Container(
-            Static(self.label_text, id="question"),
+        container = Container(
+            Static(self.text, id="question"),
             DirectoryTree(self.start_path, id="dir-tree"),
             Input(placeholder=self.placeholder, id="file-input"),
-            Grid(*(Button(label, variant=variant, id=action) for label, action, variant in self.buttons), classes="btn-grid-2"),
+            Grid(*(Button(label, variant=variant, id=action) for label, action, variant in self.buttons), classes=f"btn-grid btn-grid-{len(self.buttons)}"),
             id="dialog"
         )
+        container.border_title = self.title
+        yield container
 
     def on_mount(self) -> None:
         self.styles.align_horizontal = "center"
@@ -288,6 +270,8 @@ class OptionDialog(ModalScreen):
         width: 60;
         height: 18;
         border: solid $accent;
+        background: $surface;
+        border_title_align: center;
     }
 
     ListView {
@@ -296,14 +280,15 @@ class OptionDialog(ModalScreen):
     }
     """
 
-    def __init__(self, label_text="Choose an option:", options=None, **kwargs):
+    def __init__(self, text="Choose an option:", title="Dialog", options=None, **kwargs):
         """
-        label_text: str, label to display above list
+        text: str, label to display above list
+        title: str, dialog window title (shown in border)
         options: list of str or (label, value) tuples
-        buttons: list of (label, id, variant) tuples, e.g. [("Cancel", "cancel", "error"), ("OK", "ok", "primary")]
         """
         super().__init__(**kwargs)
-        self.label_text = label_text
+        self.text = text
+        self.title = title
         self.options = options or []
 
     def compose(self) -> ComposeResult:
@@ -315,11 +300,13 @@ class OptionDialog(ModalScreen):
                 label, value = str(opt), opt
             items.append(ListItem(Label(label), id=f"item-{value}"))
 
-        yield Container(
-            Static(self.label_text, id="question"),
+        container = Container(
+            Static(self.text),
             ListView(*items, id="options-list"),
             id="dialog"
         )
+        container.border_title = self.title
+        yield container
 
     def on_mount(self) -> None:
         self.styles.align_horizontal = "center"
