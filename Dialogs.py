@@ -1,6 +1,6 @@
 from os import path
 from textual.screen import ModalScreen
-from textual.containers import Grid, Container
+from textual.containers import Grid, Container, Horizontal
 from textual.app import ComposeResult
 from textual.widgets import Button, Input, Label, DirectoryTree, ListView, ListItem, Static
 from textual.binding import Binding
@@ -143,35 +143,25 @@ class FileDialog(ModalScreen):
 
     CSS = """
     #dialog {
-        grid-size: 2;
-        grid-gutter: 1 2;
-        grid-rows: 1fr 1fr 3;
-        padding: 0 1;
+        padding: 1 2;
         width: 60;
-        height: 24;
+        height: 26;
         border: solid $accent;
-        background: $surface;
     }
         
-    #question {
-        column-span: 2;
-        height: 1fr;
-        width: 1fr;
-        content-align: center middle;
-    }
-    
-    #file-input {
-        column-span: 2;
-        width: 100%;
-    }
-
     #dir-tree {
-        row-span: 3;
-        column-span: 2;
+        height: 11;
         width: 100%;
         border: solid $primary 10%;
         background: $boost;
         overflow: auto;
+        margin: 1 0;
+    }
+
+    .btn-grid-2 {
+        margin: 1 0;
+        grid-size: 2 1;
+        grid-gutter: 2 1;
     }
 
     Button {
@@ -195,20 +185,19 @@ class FileDialog(ModalScreen):
         self.check_exists = check_exists
         self.buttons = buttons or [("Cancel", "cancel", "error"), ("OK", "ok", "primary")]
         self.start_path = start_path or path.expanduser("~")
+        if self.select_type == "file" :
+            self.placeholder = "/path/to/file"
+        elif self.select_type == "folder" :
+            self.placeholder = "/path/to/folder"
+        elif self.select_type == "both" :
+            self.placeholder = "/path/to/file-or-folder"
 
     def compose(self) -> "ComposeResult":
-        if self.select_type == "file" :
-            placeholder = "/path/to/file"
-        elif self.select_type == "folder" :
-            placeholder = "/path/to/folder"
-        elif self.select_type == "both" :
-            placeholder = "/path/to/file-or-folder"
-        
-        yield Grid(
-            Label(self.label_text, id="question"),
+        yield Container(
+            Static(self.label_text, id="question"),
             DirectoryTree(self.start_path, id="dir-tree"),
-            Input(placeholder=placeholder, id="file-input"),
-            *(Button(label, variant=variant, id=btn_id) for label, btn_id, variant in self.buttons),
+            Input(placeholder=self.placeholder, id="file-input"),
+            Grid(*(Button(label, variant=variant, id=btn_id) for label, btn_id, variant in self.buttons), classes="btn-grid-2"),
             id="dialog"
         )
 
@@ -288,6 +277,7 @@ class OptionDialog(ModalScreen):
     }
 
     ListView {
+        margin: 1 0 0 0;
         border: solid $primary 40%;
     }
     """
