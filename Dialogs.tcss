@@ -1,0 +1,20 @@
+.btn-grid{
+    margin: 1 0;
+    grid-gutter: 2 1;
+}
+
+.btn-grid-1 {
+    grid-size: 1 1;
+}
+
+.btn-grid-2 {
+    grid-size: 2 1;
+}
+
+.btn-grid-3 {
+    grid-size: 3 1;
+}
+
+Button {
+    width: 100%;
+}

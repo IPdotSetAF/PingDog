@@ -1,7 +1,7 @@
 import argparse
 import asyncio
 import time
-import os
+from  os import path
 from pathlib import Path
 import ssl
 import certifi
@@ -11,14 +11,14 @@ from textual.app import App
 from textual.binding import Binding
 from textual.widgets import DataTable, Header, Footer
 from config import PingDogConfig
-from Dialogs import QuestionDialog, InputDialog, FileDialog 
+from Dialogs import QuestionDialog, InputDialog, FileDialog , OptionDialog
 from PingDogCommands import PingDogCommands
 
 ssl_context = ssl.create_default_context(cafile=certifi.where())
 
 def read_urls_from_file(file_path):
     with open(file_path, "r") as f:
-        return [line.strip() for line in f if line.strip()]
+        return list(dict.fromkeys([line.strip() for line in f if line.strip()])) 
 
 class PingDog(App):
     BINDINGS = [
@@ -58,11 +58,12 @@ class PingDog(App):
     def action_add_url(self) -> None:
         self.push_screen(
             InputDialog(
-                label_text="Enter URL to add:",
+                text="Enter URL to add:",
+                title="Add URL",
                 placeholder="https://example.com",
-                buttons=[("Cancel", "cancel", "error"), ("Add", "ok", "primary")]
+                buttons=[("Cancel", "neutral", "error"), ("Add", "positive", "primary")]
             ),
-            lambda result: self.add_url(result["value"].strip()) if result and result.get("button") == "ok" and result.get("value") else None
+            lambda result: self.add_url(result.strip()) if result else None
         )
 
     def action_delete_url(self) -> None:
@@ -72,39 +73,61 @@ class PingDog(App):
             url = self.urls[row]
             self.push_screen(
                 QuestionDialog(
-                    label_text=f"Delete URL?\n{url}",
-                    buttons=[("No", "cancel", "error"), ("Yes", "ok", "primary")]
+                    text=f"Delete URL?\n{url}",
+                    title="Confirm Deletion",
+                    buttons=[("Cancel", "neutral", "primary"), ("Delete", "positive", "error")]
                 ),
-                lambda result: self.delete_url(row) if result and result.get("button") == "ok" else None
+                lambda result: self.delete_url(row) if result else None
             )
 
     def action_import(self) -> None:
+        def confirm(result): 
+            if result :
+                if len(self.urls) == 0 :
+                    self.import_urls(result) 
+                else :
+                    self.push_screen(
+                        OptionDialog(
+                            text="There are URLs already in your workspace. How do you want to import new URLs?",
+                            title="Import URLs Options",
+                            options=[
+                                ("Cancel", "cancel"),
+                                ("Open (replace)", "open"),
+                                ("Append", "append"),
+                            ],
+                        ),
+                        lambda res: self.import_urls(result) if res == "open"
+                        else self.import_urls(result, True) if res == "append"
+                        else None
+                    )
+
         self.push_screen(
             FileDialog(
-                label_text="Select file to import URLs from:",
+                text="Select file to import URLs from:",
+                title="Import URLs",
                 select_type="file",
                 check_exists=True,
-                buttons=[("Cancel", "cancel", "error"), ("Import", "ok", "primary")],
-                start_path=os.path.curdir
-            ),
-            self.import_urls
+                buttons=[("Cancel", "neutral", "error"), ("Import", "positive", "primary")],
+                start_path=path.curdir
+            ), confirm
         )
         
     def action_export(self) -> None:
         self.push_screen(
             FileDialog(
-                label_text="Select file to export URLs to:",
+                text="Select file to export URLs to:",
+                title="Export URLs",
                 select_type="file",
                 check_exists=False,
-                buttons=[("Cancel", "cancel", "error"), ("Export", "ok", "primary")],
-                start_path=os.path.curdir
+                buttons=[("Cancel", "neutral", "error"), ("Export", "positive", "primary")],
+                start_path=path.curdir
             ),
-            self.export_urls
+            lambda result: self.export_urls(result) if result else None
         )
     
     def add_url(self, url: str):
         if url and url not in self.urls:
-            self.urls.append(url)
+            self.urls.append(url) # Ensure distinct URLs
             self.update_table()
             self.notify(f"Added URL: {url}")
         elif url in self.urls:
@@ -119,26 +142,25 @@ class PingDog(App):
             self.update_table()
             self.notify(f"Deleted URL: {url}")
 
-    def import_urls(self, filePath):
-        if filePath and filePath.get("button") == "ok" and filePath.get("value"):
-            file_path = filePath["value"]
-            try:
-                self.urls = read_urls_from_file(file_path)
-                self.update_table()
-                self.notify(f"Imported URLs from {file_path}")
-            except Exception as e:
-                self.notify(f"Failed to import: {e}", severity="error")
+    def import_urls(self, filePath, append=False):
+        try:
+            if append:
+                self.urls = list(dict.fromkeys(self.urls + read_urls_from_file(filePath)))
+            else:
+                self.urls = read_urls_from_file(filePath)
+            self.update_table()
+            self.notify(f"Imported URLs from {filePath}")
+        except Exception as e:
+            self.notify(f"Failed to import: {e}", severity="error")
 
     def export_urls(self, filePath):
-        if filePath and filePath.get("button") == "ok" and filePath.get("value"):
-            file_path = filePath["value"]
-            try:
-                with open(file_path, "w") as f:
-                    for url in self.urls:
-                        f.write(url + "\n")
-                self.notify(f"Exported URLs to {file_path}")
-            except Exception as e:
-                self.notify(f"Failed to export: {e}", severity="error")
+        try:
+            with open(filePath, "w") as f:
+                for url in self.urls:
+                    f.write(url + "\n")
+            self.notify(f"Exported URLs to {filePath}")
+        except Exception as e:
+            self.notify(f"Failed to export: {e}", severity="error")
 
     async def check_urls(self):
         async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context)) as session:
@@ -248,7 +270,7 @@ if __name__ == "__main__":
             print(f"Error reading file: {e}")
             exit(1)
     else:
-        urls = args.urls
+        urls = list(dict.fromkeys(args.urls))
 
     config_path = Path.home() / ".pingdog" / "config.yml"
     config_path.parent.mkdir(parents=True, exist_ok=True)
