@@ -11,7 +11,7 @@ from textual.app import App
 from textual.binding import Binding
 from textual.widgets import DataTable, Header, Footer
 from config import PingDogConfig
-from Dialogs import QuestionDialog, InputDialog, FileDialog , OptionDialog
+from Dialogs import QuestionDialog, InputDialog, FileDialog , OptionDialog, OK_CANCEL
 from PingDogCommands import PingDogCommands
 
 ssl_context = ssl.create_default_context(cafile=certifi.where())
@@ -60,9 +60,9 @@ class PingDog(App):
             InputDialog(
                 label_text="Enter URL to add:",
                 placeholder="https://example.com",
-                buttons=[("Cancel", "cancel", "error"), ("Add", "ok", "primary")]
+                buttons=[("Cancel", "neutral", "error"), ("Add", "positive", "primary")]
             ),
-            lambda result: self.add_url(result["value"].strip()) if result and result.get("button") == "ok" and result.get("value") else None
+            lambda result: self.add_url(result.strip()) if result else None
         )
 
     def action_delete_url(self) -> None:
@@ -73,16 +73,16 @@ class PingDog(App):
             self.push_screen(
                 QuestionDialog(
                     label_text=f"Delete URL?\n{url}",
-                    buttons=[("No", "cancel", "error"), ("Yes", "ok", "primary")]
+                    buttons=[("Cancel", "neutral", "primary"), ("OK", "positive", "error")]
                 ),
-                lambda result: self.delete_url(row) if result and result.get("button") == "ok" else None
+                lambda result: self.delete_url(row) if result else None
             )
 
     def action_import(self) -> None:
         def confirm(result): 
-            if result and result.get("button") == "ok" and result.get("value") :
+            if result :
                 if len(self.urls) == 0 :
-                    self.import_urls(result["value"]) 
+                    self.import_urls(result) 
                 else :
                     self.push_screen(
                         OptionDialog(
@@ -93,8 +93,8 @@ class PingDog(App):
                                 ("Append", "append"),
                             ],
                         ),
-                        lambda res: self.import_urls(result["value"]) if res == "open"
-                        else self.import_urls(result["value"], True) if res == "append"
+                        lambda res: self.import_urls(result) if res == "open"
+                        else self.import_urls(result, True) if res == "append"
                         else None
                     )
 
@@ -103,7 +103,7 @@ class PingDog(App):
                 label_text="Select file to import URLs from:",
                 select_type="file",
                 check_exists=True,
-                buttons=[("Cancel", "cancel", "error"), ("Import", "ok", "primary")],
+                buttons=[("Cancel", "neutral", "error"), ("Import", "positive", "primary")],
                 start_path=path.curdir
             ), confirm
         )
@@ -114,10 +114,10 @@ class PingDog(App):
                 label_text="Select file to export URLs to:",
                 select_type="file",
                 check_exists=False,
-                buttons=[("Cancel", "cancel", "error"), ("Export", "ok", "primary")],
+                buttons=[("Cancel", "neutral", "error"), ("Export", "positive", "primary")],
                 start_path=path.curdir
             ),
-            lambda result: self.export_urls(result["value"]) if result and result.get("button") == "ok" and result.get("value") else None
+            lambda result: self.export_urls(result) if result else None
         )
     
     def add_url(self, url: str):
