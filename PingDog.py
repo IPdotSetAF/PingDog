@@ -113,6 +113,20 @@ class PingDog(App):
         )
         
     def action_export(self) -> None:
+        def confirm(result):
+            if result:
+                if Path(result).exists():
+                    self.push_screen(
+                        QuestionDialog(
+                            text=f"File already exists, Do you want to overwrite?\n{result}",
+                            title="Confirm Overwrite",
+                            buttons=[("Cancel", "neutral", "primary"), ("Overwrite", "positive", "error")]
+                        ),
+                        lambda res: self.export_urls(result) if res else None
+                    )
+                else:
+                    self.export_urls(result)
+                    
         self.push_screen(
             FileDialog(
                 text="Select file to export URLs to:",
@@ -121,8 +135,7 @@ class PingDog(App):
                 check_exists=False,
                 buttons=[("Cancel", "neutral", "error"), ("Export", "positive", "primary")],
                 start_path=path.curdir
-            ),
-            lambda result: self.export_urls(result) if result else None
+            ), confirm
         )
     
     def add_url(self, url: str):
