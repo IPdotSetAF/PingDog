@@ -1,3 +1,5 @@
 textual
 aiohttp
 rich
+certifi
+pyyaml
