@@ -1,6 +1,14 @@
 # PingDog
+<pre>
+     _/\/\/\/\/\____/\/\________________________________/\/\/\/\/\___________________________
+    _/\/\____/\/\__________/\/\/\/\______/\/\/\/\______/\/\____/\/\____/\/\/\______/\/\/\/\_ 
+   _/\/\/\/\/\____/\/\____/\/\__/\/\__/\/\__/\/\______/\/\____/\/\__/\/\__/\/\__/\/\__/\/\_  
+  _/\/\__________/\/\____/\/\__/\/\____/\/\/\/\______/\/\____/\/\__/\/\__/\/\____/\/\/\/\_   
+ _/\/\__________/\/\/\__/\/\__/\/\________/\/\______/\/\/\/\/\______/\/\/\__________/\/\_    
+___________________________________/\/\/\/\__________________________________/\/\/\/\___     
+</pre>
 
-PingDog is a TUI (Text User Interface) application for monitoring HTTP services and website availability. It provides real-time status monitoring with a clean, interactive interface.
+PingDog is an application for monitoring HTTP services and website availability that runs in your console! It provides real-time status monitoring with a clean, interactive interface.
 
 ## Features
 
@@ -10,11 +18,13 @@ PingDog is a TUI (Text User Interface) application for monitoring HTTP services 
 - Interactive TUI with keyboard shortcuts
 - URL management (add, delete, import, export)
 - Configurable check intervals
-- Dark/Light theme support
+- Theme support
 
 ## Screenshot
 
-![PingDog Preview](/images/preview.svg)
+<p align="center">
+    <img width=80% alt="PingDog Preview" src="./images/preview.svg">
+</p>
 
 ## Installation
 
@@ -64,10 +74,6 @@ Monitor specific URLs with custom interval:
 ```
 python PingDog.py -i 10 https://example.com https://api.example.com
 ```
-
-## Configuration
-
-PingDog stores its configuration in `~/.pingdog/config.yml`. This includes theme preferences and other settings that persist between sessions.
 
 ## Contribution
 - You can open Issues for any bug report or feature request.

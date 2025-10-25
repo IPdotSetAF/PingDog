@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import time
 from  os import path
+import sys
 from pathlib import Path
 import ssl
 import certifi
@@ -248,10 +249,23 @@ class PingDog(App):
             table.update_cell(url, "response_time", response_text, update_width=True)
             table.update_cell(url, "last_checked", last_checked_text, update_width=True)
 
+def splash_screen() -> str:
+    with open('art.txt', 'r', encoding='utf-8') as f:
+        ascii_art = f.read()
+    return ascii_art
+
+def clear_splash_screen():
+    lines = splash_screen().count('\n') or 1
+    for _ in range(lines):
+        sys.stdout.write('\033[F')  # move cursor up one line
+        sys.stdout.write('\033[K')  # clear that line
+    sys.stdout.flush()
 
 if __name__ == "__main__":
+    print(splash_screen())
+
     parser = argparse.ArgumentParser(
-        description="Monitor website availability from a file or a list of URLs"
+        description= "PingDog - A simple URL monitoring tool"
     )
     parser.add_argument(
         "-f",
@@ -284,6 +298,9 @@ if __name__ == "__main__":
             exit(1)
     else:
         urls = list(dict.fromkeys(args.urls))
+
+    time.sleep(1)
+    clear_splash_screen()
 
     config_path = Path.home() / ".pingdog" / "config.yml"
     config_path.parent.mkdir(parents=True, exist_ok=True)
