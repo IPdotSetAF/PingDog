@@ -5,7 +5,7 @@ a = Analysis(
     ['PingDog.py'],
     pathex=[],
     binaries=[],
-    datas=[('Dialogs.tcss', 'art.txt', '.')],
+    datas=[('Dialogs.tcss', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

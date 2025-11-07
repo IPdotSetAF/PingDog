@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
   workflow_call:
 
-environments:
+env:
   APP_NAME: PingDog
-  PYTHON_VERSION: 3.11.4
+  PYTHON_VERSION: 3.14.0
 
 jobs:
   build-windows:
@@ -24,7 +24,9 @@ jobs:
 
       - name: Package
         working-directory: dist
-        run: move ${{ env.APP_NAME }}.exe ${{ env.APP_NAME }}-${{ github.ref_name }}.exe & tar -a -c -f ${{ env.APP_NAME }}-${{ github.ref_name }}-windows.zip ${{ env.APP_NAME }}-${{ github.ref_name }}.exe
+        run: |
+          move ${{ env.APP_NAME }}.exe ${{ env.APP_NAME }}-${{ github.ref_name }}.exe 
+          tar -a -c -f ${{ env.APP_NAME }}-${{ github.ref_name }}-windows.zip ${{ env.APP_NAME }}-${{ github.ref_name }}.exe
       - uses: actions/upload-artifact@v4
         with:
           name: build-windows
@@ -52,7 +54,9 @@ jobs:
         run: echo "platform_name=$(echo ${{ matrix.platform }} | sed 's:/:-:g')" >> $GITHUB_OUTPUT
       - name: Package
         working-directory: dist
-        run: mv ${{ env.APP_NAME }} ${{ env.APP_NAME }}-${{ github.ref_name }} & tar -czf ${{ env.APP_NAME }}-${{ github.ref_name }}-${{ steps.name.outputs.platform_name }}.tar.gz ${{ env.APP_NAME }}-${{ github.ref_name }}
+        run: |
+          mv ${{ env.APP_NAME }} ${{ env.APP_NAME }}-${{ github.ref_name }} 
+          tar -czf ${{ env.APP_NAME }}-${{ github.ref_name }}-${{ steps.name.outputs.platform_name }}.tar.gz ${{ env.APP_NAME }}-${{ github.ref_name }}
       - uses: actions/upload-artifact@v4
         with:
           name: build-${{ steps.name.outputs.platform_name }}
@@ -73,7 +77,9 @@ jobs:
 
       - name: Package
         working-directory: dist
-        run: mv ${{ env.APP_NAME }} ${{ env.APP_NAME }}-${{ github.ref_name }} & tar -czf ${{ env.APP_NAME }}-${{ github.ref_name }}-macos.tar.gz ${{ env.APP_NAME }}-${{ github.ref_name }}
+        run: |
+          mv ${{ env.APP_NAME }} ${{ env.APP_NAME }}-${{ github.ref_name }}
+          tar -czf ${{ env.APP_NAME }}-${{ github.ref_name }}-macos.tar.gz ${{ env.APP_NAME }}-${{ github.ref_name }}
       - uses: actions/upload-artifact@v4
         with:
           name: build-macos
