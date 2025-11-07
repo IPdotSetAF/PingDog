@@ -1,0 +1,80 @@
+name: Build Platforms
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+environments:
+  APP_NAME: PingDog
+  PYTHON_VERSION: 3.11.4
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pyinstaller
+      - name: Build
+        run: pyinstaller ${{ env.APP_NAME }}.win.spec
+
+      - name: Package
+        working-directory: dist
+        run: move ${{ env.APP_NAME }}.exe ${{ env.APP_NAME }}-${{ github.ref_name }}.exe & tar -a -c -f ${{ env.APP_NAME }}-${{ github.ref_name }}-windows.zip ${{ env.APP_NAME }}-${{ github.ref_name }}.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-windows
+          path: dist/${{ env.APP_NAME }}-${{ github.ref_name }}-windows.zip
+
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pyinstaller
+      - name: Build
+        run: pyinstaller ${{ env.APP_NAME }}.linux.spec
+
+      - id: name 
+        run: echo "platform_name=$(echo ${{ matrix.platform }} | sed 's:/:-:g')" >> $GITHUB_OUTPUT
+      - name: Package
+        working-directory: dist
+        run: mv ${{ env.APP_NAME }} ${{ env.APP_NAME }}-${{ github.ref_name }} & tar -czf ${{ env.APP_NAME }}-${{ github.ref_name }}-${{ steps.name.outputs.platform_name }}.tar.gz ${{ env.APP_NAME }}-${{ github.ref_name }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ steps.name.outputs.platform_name }}
+          path: dist/${{ env.APP_NAME }}-${{ github.ref_name }}-${{ steps.name.outputs.platform_name }}.tar.gz
+    
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pyinstaller
+      - name: Build
+        run: pyinstaller ${{ env.APP_NAME }}.macos.spec
+
+      - name: Package
+        working-directory: dist
+        run: mv ${{ env.APP_NAME }} ${{ env.APP_NAME }}-${{ github.ref_name }} & tar -czf ${{ env.APP_NAME }}-${{ github.ref_name }}-macos.tar.gz ${{ env.APP_NAME }}-${{ github.ref_name }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-macos
+          path: dist/${{ env.APP_NAME }}-${{ github.ref_name }}-macos.tar.gz
