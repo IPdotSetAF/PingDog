@@ -1,0 +1,38 @@
+name: Build Release
+
+on: 
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  id-token: write
+
+env:
+  APP_NAME: PingDog
+
+jobs:
+  build: 
+    uses: ./.github/workflows/build-platforms.yml
+
+  release:
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+    needs: [build]
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: build-*
+        path: ./
+        merge-multiple: true
+    - name: Release
+      uses: softprops/action-gh-release@v2
+      with:
+        prerelease: true
+        generate_release_notes: true
+        files: |
+          ${{ env.APP_NAME }}-${{ github.ref_name }}-windows.zip
+          ${{ env.APP_NAME }}-${{ github.ref_name }}-linux-amd64.tar.gz
+          ${{ env.APP_NAME }}-${{ github.ref_name }}-linux-arm64.tar.gz
+          ${{ env.APP_NAME }}-${{ github.ref_name }}-macos.tar.gz
