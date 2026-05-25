@@ -213,6 +213,17 @@ class PingDog(App):
         ("Detail", "detail"),
     ]
 
+    response_time_colors = ["green", "bright_yellow", "yellow", "red"]
+    response_time_ranges = {
+        "http": [100, 300, 700],
+    }
+
+    def get_range_index(self, ranges, value):
+        for i, v in enumerate(ranges):
+            if value <= v:
+                return i
+        return len(ranges)
+        
     def update_table(self):
         table = self.query_one(DataTable)
         # If table is empty or number of rows doesn't match, reinitialize
@@ -239,10 +250,14 @@ class PingDog(App):
             status_text = Text(str(status), style=style) if status else Text("N/A", style=style)
 
             detail_text = Text(f"Error: {error}" if error else "", style = style)
+             
+            if response_time is not None:
+                response_time = response_time * 1000
+                style =  self.response_time_colors[self.get_range_index(self.response_time_ranges["http"], response_time)]
+                response_text = Text((f"{response_time:.0f}ms" if response_time>= 10 else f"{response_time:.2f}ms") if response_time is not None else "N/A", style = style)
+            else:
+                response_text = Text("N/A", style = "red")
                 
-            response_text = Text(
-                f"{response_time:.2f}s" if response_time is not None else "N/A"
-            )
             last_checked_text = Text((
                 time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(last_checked))
                 if last_checked
