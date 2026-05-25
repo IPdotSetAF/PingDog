@@ -208,7 +208,8 @@ class PingDog(App):
         ("URL", "url"),
         ("Status", "status"),
         ("Response Time", "response_time"),
-        ("Last Checked", "last_checked")
+        ("Last Checked", "last_checked"),
+        ("Detail", "detail"),
     ]
 
     def update_table(self):
@@ -218,7 +219,7 @@ class PingDog(App):
             table.clear(columns=True)
             table.add_columns(*self.columns)
             for url in self.urls:
-                table.add_row(Text(url), Text("N/A"), Text("N/A"), Text("N/A"), key=url)
+                table.add_row(Text(url), Text("N/A"), Text("N/A"), Text("N/A"), Text(""), key=url)
 
         for url in self.urls:
             metrics = self.metrics.get(url, {})
@@ -226,16 +227,17 @@ class PingDog(App):
             error = metrics.get("error")
             response_time = metrics.get("response_time")
             last_checked = metrics.get("last_checked")
-
-            if error:
-                status_text = Text(f"Error: {error}", style="red")
+            
+            if 200 <= (status or 0) < 400:
+                style = "green"
             else:
-                if 200 <= (status or 0) < 400:
-                    style = "green"
-                else:
-                    style = "yellow" if 400 <= (status or 0) < 500 else "red"
-                status_text = Text(str(status), style=style) if status else Text("N/A")
+                style = "yellow" if 400 <= (status or 0) < 500 else "red"
+            status_text = Text(str(status), style=style) if status else Text("N/A", style=style)
 
+            detail_text = ""
+            if error:
+                detail_text = Text(f"Error: {error}", style="red")
+                
             response_text = Text((
                 f"{response_time:.2f}s" if response_time is not None else "N/A"
             ))
@@ -248,6 +250,7 @@ class PingDog(App):
             table.update_cell(url, "status", status_text, update_width=True)
             table.update_cell(url, "response_time", response_text, update_width=True)
             table.update_cell(url, "last_checked", last_checked_text, update_width=True)
+            table.update_cell(url, "detail", detail_text, update_width=True)
 
 def splash_screen() -> str:
     return r'''
