@@ -205,6 +205,7 @@ class PingDog(App):
             }
 
     columns = [
+        ("Protocol", "protocol"),
         ("URL", "url"),
         ("Status", "status"),
         ("Response Time", "response_time"),
@@ -219,7 +220,10 @@ class PingDog(App):
             table.clear(columns=True)
             table.add_columns(*self.columns)
             for url in self.urls:
-                table.add_row(Text(url), Text("N/A"), Text("N/A"), Text("N/A"), Text(""), key=url)
+                if url.startswith('https://'):
+                    table.add_row(Text("\U0001F512 HTTPS"), Text(url), Text("N/A"), Text("N/A"), Text("N/A"), Text(""), key=url)
+                else:
+                    table.add_row(Text("\U0001F513 HTTP"), Text(url), Text("N/A"), Text("N/A"), Text("N/A"), Text(""), key=url)
 
         for url in self.urls:
             metrics = self.metrics.get(url, {})
@@ -234,13 +238,11 @@ class PingDog(App):
                 style = "yellow" if 400 <= (status or 0) < 500 else "red"
             status_text = Text(str(status), style=style) if status else Text("N/A", style=style)
 
-            detail_text = ""
-            if error:
-                detail_text = Text(f"Error: {error}", style="red")
+            detail_text = Text(f"Error: {error}" if error else "", style = style)
                 
-            response_text = Text((
+            response_text = Text(
                 f"{response_time:.2f}s" if response_time is not None else "N/A"
-            ))
+            )
             last_checked_text = Text((
                 time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(last_checked))
                 if last_checked
