@@ -1,3 +1,11 @@
+<p align=left>
+   <img src="https://img.shields.io/github/v/release/IPdotSetAF/PingDog"/>
+   <img src="https://img.shields.io/github/release-date/IPdotSetAF/PingDog"/>
+   <img src="https://img.shields.io/github/last-commit/IPdotSetAF/PingDog"/>
+   <img src="https://img.shields.io/github/license/IPdotSetAF/PingDog"/>
+   <img src="https://img.shields.io/github/downloads/IPdotSetAF/PingDog/total"/>
+</p>
+
 # PingDog
 <pre>
      _/\/\/\/\/\____/\/\________________________________/\/\/\/\/\___________________________
@@ -43,6 +51,7 @@ PingDog is an application for monitoring HTTP services and website availability 
 - `-i, --interval`: Check interval in seconds (default: 5)
 - `urls`: Space-separated list of URLs to monitor (alternative to using a file)
 - `-h, --help`: Show help message
+- `-v, --version`: Show PingDog version
 
 ### Keyboard Shortcuts
 
