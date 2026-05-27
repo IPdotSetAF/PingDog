@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import re
+from datetime import timedelta
 import time
 from  os import path
 import sys
@@ -11,7 +12,8 @@ import aiohttp
 from rich.text import Text
 from textual.app import App
 from textual.binding import Binding
-from textual.widgets import DataTable, Header, Footer
+from textual.widgets import DataTable, Header, Footer, Label
+from textual.containers import Horizontal, Vertical
 from config import PingDogConfig
 from Dialogs import QuestionDialog, InputDialog, FileDialog , OptionDialog
 from PingDogCommands import PingDogCommands
@@ -23,6 +25,19 @@ def read_urls_from_file(file_path):
         return list(dict.fromkeys([line.strip() for line in f if line.strip()])) 
 
 class PingDog(App):
+    
+    DEFAULT_CSS = """
+    #info {
+        background: $panel;
+        color: $foreground;
+        height: 1;
+        align-horizontal: center;
+    }
+    #info *{
+        padding: 0 1;
+    }
+    """
+    
     BINDINGS = [
         Binding("ctrl+q", "quit", "Quit"),
         Binding("i", "import", "Import URLs"),
@@ -47,7 +62,13 @@ class PingDog(App):
 
     def compose(self):
         yield Header(show_clock= True)
-        yield DataTable()
+        with Vertical():
+            with Horizontal(id= 'info'):
+                yield Label("Last Checked:")
+                yield Label("N/A", id = "last_checked")
+                yield Label("-") 
+                yield Label(f"Updates every {timedelta(seconds=self.check_interval)}")
+            yield DataTable()
         yield Footer()
 
     async def on_mount(self):
@@ -183,6 +204,7 @@ class PingDog(App):
             results = await asyncio.gather(*tasks)
             for url, result in zip(self.urls, results):
                 self.metrics[url] = result
+            self.update_info(time.time())
             self.update_table()
 
     async def check_url(self, session, url):
@@ -195,14 +217,12 @@ class PingDog(App):
                     "status": response.status,
                     "response_time": time.time() - start_time,
                     "error": None,
-                    "last_checked": start_time,
                 }
         except Exception as e:
             return {
                 "status": None,
                 "response_time": None,
                 "error": str(e),
-                "last_checked": start_time,
             }
 
     columns = [
@@ -210,7 +230,6 @@ class PingDog(App):
         ("URL", "url"),
         ("Status", "status"),
         ("Response Time", "response_time"),
-        ("Last Checked", "last_checked"),
         ("Detail", "detail"),
     ]
 
@@ -227,22 +246,21 @@ class PingDog(App):
         
     def update_table(self):
         table = self.query_one(DataTable)
-        # If table is empty or number of rows doesn't match, reinitialize
+        
         if len(table.rows) != len(self.urls):
             table.clear(columns=True)
             table.add_columns(*self.columns)
             for url in self.urls:
                 if url.startswith('https://'):
-                    table.add_row(Text("\U0001F512 HTTPS"), Text(url), Text("N/A"), Text("N/A"), Text("N/A"), Text(""), key=url)
+                    table.add_row(Text("\U0001F512HTTPS"), Text(url), Text("N/A"), Text("N/A"), Text(""), key=url)
                 else:
-                    table.add_row(Text("\U0001F513 HTTP"), Text(url), Text("N/A"), Text("N/A"), Text("N/A"), Text(""), key=url)
+                    table.add_row(Text("\U0001F513HTTP"), Text(url), Text("N/A"), Text("N/A"), Text(""), key=url)
 
         for url in self.urls:
             metrics = self.metrics.get(url, {})
             status = metrics.get("status")
             error = metrics.get("error")
             response_time = metrics.get("response_time")
-            last_checked = metrics.get("last_checked")
             
             if 200 <= (status or 0) < 400:
                 style = "green"
@@ -259,17 +277,13 @@ class PingDog(App):
             else:
                 response_text = Text("N/A", style = "red")
                 
-            last_checked_text = Text((
-                time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(last_checked))
-                if last_checked
-                else "N/A"
-            ))
-
             table.update_cell(url, "status", status_text, update_width=True)
             table.update_cell(url, "response_time", response_text, update_width=True)
-            table.update_cell(url, "last_checked", last_checked_text, update_width=True)
             table.update_cell(url, "detail", detail_text, update_width=True)
 
+    def update_info(self, last_checked):
+        self.query_one("#last_checked", Label).update(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(last_checked)) if last_checked else "N/A")
+        
 def splash_screen() -> str:
     RED = '\033[91m'
     RESET = '\033[0m'
