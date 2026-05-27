@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import re
 import time
 from  os import path
 import sys
@@ -270,7 +271,9 @@ class PingDog(App):
             table.update_cell(url, "detail", detail_text, update_width=True)
 
 def splash_screen() -> str:
-    return r'''
+    RED = '\033[91m'
+    RESET = '\033[0m'
+    splash = r'''
      _/\/\/\/\/\____/\/\________________________________/\/\/\/\/\___________________________
     _/\/\____/\/\__________/\/\/\/\______/\/\/\/\______/\/\____/\/\____/\/\/\______/\/\/\/\_ 
    _/\/\/\/\/\____/\/\____/\/\__/\/\__/\/\__/\/\______/\/\____/\/\__/\/\__/\/\__/\/\__/\/\_  
@@ -278,6 +281,7 @@ def splash_screen() -> str:
  _/\/\__________/\/\/\__/\/\__/\/\________/\/\______/\/\/\/\/\______/\/\/\__________/\/\_    
 ___________________________________/\/\/\/\__________________________________/\/\/\/\___     
 '''
+    return re.sub(r"((/\\)+)", rf'{RED}\1{RESET}', splash)
 
 def clear_splash_screen():
     lines = splash_screen().count('\n') or 1
