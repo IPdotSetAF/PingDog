@@ -310,6 +310,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description= "PingDog - A simple URL monitoring tool"
     )
+    parser.version = "PingDog v1.1.0"
+    parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        help="Show PingDog version",
+    )
     parser.add_argument(
         "-f",
         "--file",
