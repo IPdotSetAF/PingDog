@@ -213,12 +213,12 @@ class PingDog(App):
             async with session.get(
                 url, timeout=aiohttp.ClientTimeout(total=self.config.timeout)
             ) as response:
-                ip = response.connection.transport.get_extra_info('peername')[0] if response.connection else None
+                ip_port = response.connection.transport.get_extra_info('peername') if response.connection else None
                 return {
                     "status": response.status,
                     "response_time": time.time() - start_time,
                     "error": None,
-                    "ip": ip
+                    "ip": f"{ip_port[0]}:{ip_port[1]}" if ip_port else None
                 }
         except Exception as e:
             return {
