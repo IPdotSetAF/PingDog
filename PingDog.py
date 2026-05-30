@@ -213,16 +213,19 @@ class PingDog(App):
             async with session.get(
                 url, timeout=aiohttp.ClientTimeout(total=self.config.timeout)
             ) as response:
+                ip = response.connection.transport.get_extra_info('peername')[0] if response.connection else None
                 return {
                     "status": response.status,
                     "response_time": time.time() - start_time,
                     "error": None,
+                    "ip": ip
                 }
         except Exception as e:
             return {
                 "status": None,
                 "response_time": None,
                 "error": str(e),
+                "ip": None
             }
 
     columns = [
@@ -230,6 +233,7 @@ class PingDog(App):
         ("URL", "url"),
         ("Status", "status"),
         ("Response Time", "response_time"),
+        ("IP", "ip"),
         ("Detail", "detail"),
     ]
 
@@ -252,15 +256,16 @@ class PingDog(App):
             table.add_columns(*self.columns)
             for url in self.urls:
                 if url.startswith('https://'):
-                    table.add_row(Text("\U0001F512HTTPS"), Text(url), Text("N/A"), Text("N/A"), Text(""), key=url)
+                    table.add_row(Text("\U0001F512HTTPS"), Text(url), Text("N/A"), Text("N/A"), Text("N/A"), Text(""), key=url)
                 else:
-                    table.add_row(Text("\U0001F513HTTP"), Text(url), Text("N/A"), Text("N/A"), Text(""), key=url)
+                    table.add_row(Text("\U0001F513HTTP"), Text(url), Text("N/A"), Text("N/A"), Text("N/A"), Text(""), key=url)
 
         for url in self.urls:
             metrics = self.metrics.get(url, {})
             status = metrics.get("status")
             error = metrics.get("error")
             response_time = metrics.get("response_time")
+            ip = metrics.get("ip")
             
             if 200 <= (status or 0) < 400:
                 style = "green"
@@ -277,8 +282,11 @@ class PingDog(App):
             else:
                 response_text = Text("N/A", style = "red")
                 
+            ip_text = Text(ip if ip else "N/A")
+                
             table.update_cell(url, "status", status_text, update_width=True)
             table.update_cell(url, "response_time", response_text, update_width=True)
+            table.update_cell(url, "ip", ip_text, update_width=True)
             table.update_cell(url, "detail", detail_text, update_width=True)
 
     def update_info(self, last_checked):
