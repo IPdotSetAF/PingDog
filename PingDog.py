@@ -267,6 +267,10 @@ class PingDog(App):
             response_time = metrics.get("response_time")
             ip = metrics.get("ip")
             
+            row_style = None if (status and status < 500) else "red"
+            
+            url_text = Text(url, style = row_style)
+            
             if 200 <= (status or 0) < 400:
                 style = "green"
             else:
@@ -282,8 +286,12 @@ class PingDog(App):
             else:
                 response_text = Text("N/A", style = "red")
                 
-            ip_text = Text(ip if ip else "N/A")
+            if ip:
+                ip_text = Text(ip, style = row_style)
+            else:
+                ip_text = Text("N/A", style = row_style or "yellow")
                 
+            table.update_cell(url, "url", url_text)
             table.update_cell(url, "status", status_text, update_width=True)
             table.update_cell(url, "response_time", response_text, update_width=True)
             table.update_cell(url, "ip", ip_text, update_width=True)
