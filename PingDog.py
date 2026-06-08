@@ -40,8 +40,8 @@ class PingDog(App):
     
     BINDINGS = [
         Binding("ctrl+q", "quit", "Quit"),
-        Binding("i", "import", "Import URLs"),
-        Binding("e", "export", "Export URLs"),
+        Binding("ctrl+o", "open", "Open URLs"),
+        Binding("ctrl+s", "save", "Save URLs"),
         Binding("d", "toggle_dark", "Dark"),
         Binding("t", "change_theme", "Theme"),
         Binding("a", "add_url", "Add URL"),
@@ -104,7 +104,7 @@ class PingDog(App):
                 lambda result: self.delete_url(row) if result else None
             )
 
-    def action_import(self) -> None:
+    def action_open(self) -> None:
         def confirm(result): 
             if result :
                 if len(self.urls) == 0 :
@@ -112,8 +112,8 @@ class PingDog(App):
                 else :
                     self.push_screen(
                         OptionDialog(
-                            text="There are URLs already in your workspace. How do you want to import new URLs?",
-                            title="Import URLs Options",
+                            text="There are URLs already in your workspace. How do you want to load new URLs?",
+                            title="Open URLs Options",
                             options=[
                                 ("Cancel", "cancel"),
                                 ("Open (replace)", "open"),
@@ -127,22 +127,22 @@ class PingDog(App):
 
         self.push_screen(
             FileDialog(
-                text="Select file to import URLs from:",
-                title="Import URLs",
+                text="Select file to open URLs from:",
+                title="Open URLs",
                 select_type="file",
                 check_exists=True,
-                buttons=[("Cancel", "neutral", "error"), ("Import", "positive", "primary")],
+                buttons=[("Cancel", "neutral", "error"), ("Open", "positive", "primary")],
                 start_path=path.curdir
             ), confirm
         )
         
-    def action_export(self) -> None:
+    def action_save(self) -> None:
         def confirm(result):
             if result:
                 if Path(result).exists():
                     self.push_screen(
                         QuestionDialog(
-                            text=f"File already exists, Do you want to overwrite?\n{result}",
+                            text=f"File already exists. Do you want to overwrite?\n{result}",
                             title="Confirm Overwrite",
                             buttons=[("Cancel", "neutral", "primary"), ("Overwrite", "positive", "error")]
                         ),
@@ -153,11 +153,11 @@ class PingDog(App):
                     
         self.push_screen(
             FileDialog(
-                text="Select file to export URLs to:",
-                title="Export URLs",
+                text="Select file to save URLs to:",
+                title="Save URLs",
                 select_type="file",
                 check_exists=False,
-                buttons=[("Cancel", "neutral", "error"), ("Export", "positive", "primary")],
+                buttons=[("Cancel", "neutral", "error"), ("Save", "positive", "primary")],
                 start_path=path.curdir
             ), confirm
         )

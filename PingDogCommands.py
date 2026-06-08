@@ -6,8 +6,8 @@ class PingDogCommands(Provider):
     def __init__(self, app: App, screen: Screen) -> None:
         super().__init__(app)
         self.commands = [
-            ("Import URLs", self.app.action_import, "Import URLs from a file", True),
-            ("Export URLs", self.app.action_export, "Export URLs to a file", True),
+            ("Open URLs", self.app.action_open, "Open URLs from a file", True),
+            ("Save URLs", self.app.action_save, "Save URLs to a file", True),
         ]
 
     async def discover(self) -> Hits:

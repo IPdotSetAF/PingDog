@@ -56,8 +56,8 @@ PingDog is an application for monitoring HTTP services and website availability 
 ### Keyboard Shortcuts
 
 - `Ctrl+Q`: Quit application
-- `i`: Import URLs from file
-- `e`: Export URLs to file
+- `Ctrl+O`: Open URLs from file
+- `Ctrl+S`: Save URLs to file
 - `d`: Toggle dark mode
 - `t`: Change theme
 - `a`: Add new URL
