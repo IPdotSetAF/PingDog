@@ -23,8 +23,9 @@ PingDog is an application for monitoring HTTP services and website availability 
 - Real-time monitoring of multiple URLs
 - Response time tracking
 - HTTP status code visualization
+- Resolved IP and port display for monitored URLs
 - Interactive TUI with keyboard shortcuts
-- URL management (add, delete, import, export)
+- URL management (add, delete, open, save)
 - Configurable check intervals
 - Theme support
 
