@@ -56,7 +56,8 @@ class PingDog(App):
         self.urls = urls
         self.check_interval = check_interval
         self.metrics = {}
-
+        self.ip_cache = {}
+        
     def watch_theme(self, theme:str):
         self.config.theme = theme
 
@@ -173,6 +174,7 @@ class PingDog(App):
         if 0 <= index < len(self.urls):
             url = self.urls.pop(index)
             self.metrics.pop(url, None)
+            self.ip_cache.pop(url, None)
             table = self.query_one(DataTable)
             table.remove_row(url)
             self.update_table()
@@ -206,7 +208,22 @@ class PingDog(App):
                 self.metrics[url] = result
             self.update_info(time.time())
             self.update_table()
-
+            
+    def cache_ip(self, url, ip=None) -> str:
+        now = time.time()
+        if ip:
+            self.ip_cache[url] = {"cache_time": now, "cache_ip": ip}
+            return ip
+        else:
+            cached_ip = self.ip_cache.get(url)
+            if not cached_ip:
+                return None
+            if cached_ip["cache_time"] + self.config.ip_cache_seconds >= now:
+                return cached_ip["cache_ip"]
+            else:
+                self.ip_cache.pop(url, None)
+                return None
+            
     async def check_url(self, session, url):
         start_time = time.time()
         try:
@@ -218,14 +235,14 @@ class PingDog(App):
                     "status": response.status,
                     "response_time": time.time() - start_time,
                     "error": None,
-                    "ip": f"{ip_port[0]}:{ip_port[1]}" if ip_port else None
+                    "ip": self.cache_ip(url, f"{ip_port[0]}:{ip_port[1]}" if ip_port else None)
                 }
         except Exception as e:
             return {
                 "status": None,
                 "response_time": None,
                 "error": str(e),
-                "ip": None
+                "ip": self.cache_ip(url, None)
             }
 
     columns = [

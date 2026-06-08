@@ -35,6 +35,7 @@ class PingDogConfig(Config):
         "theme": "textual-dark",    # default theme
         "timeout": 2,               # seconds
         "log_file": "pingdog.log",  # default log file
+        "ip_cache_seconds": 60,      # IP cache duration in seconds
     }
 
     def __init__(self, yaml_path):
@@ -73,4 +74,13 @@ class PingDogConfig(Config):
     @log_file.setter
     def log_file(self, value):
         self.data["log_file"] = value
+        self.save()
+
+    @property
+    def ip_cache_seconds(self):
+        return self.data.get("ip_cache_seconds", self.DEFAULTS["ip_cache_seconds"])
+
+    @ip_cache_seconds.setter
+    def ip_cache_seconds(self, value):
+        self.data["ip_cache_seconds"] = value
         self.save()
