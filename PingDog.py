@@ -17,6 +17,7 @@ from textual.containers import Horizontal, Vertical
 from config import PingDogConfig
 from Dialogs import QuestionDialog, InputDialog, FileDialog , OptionDialog
 from PingDogCommands import PingDogCommands
+from plot import plot
 
 ssl_context = ssl.create_default_context(cafile=certifi.where())
 
@@ -57,6 +58,7 @@ class PingDog(App):
         self.check_interval = check_interval
         self.metrics = {}
         self.ip_cache = {}
+        self.response_times_history = {}  # Store last 7 response times per URL
         
     def watch_theme(self, theme:str):
         self.config.theme = theme
@@ -175,6 +177,7 @@ class PingDog(App):
             url = self.urls.pop(index)
             self.metrics.pop(url, None)
             self.ip_cache.pop(url, None)
+            self.response_times_history.pop(url, None)
             table = self.query_one(DataTable)
             table.remove_row(url)
             self.update_table()
@@ -206,6 +209,14 @@ class PingDog(App):
             results = await asyncio.gather(*tasks)
             for url, result in zip(self.urls, results):
                 self.metrics[url] = result
+                # Store response time in history (keep last 7)
+                response_time = result.get("response_time")
+                if response_time is not None:
+                    if url not in self.response_times_history:
+                        self.response_times_history[url] = []
+                    self.response_times_history[url].append(response_time * 1000)  # Convert to ms
+                    if len(self.response_times_history[url]) > 7:
+                        self.response_times_history[url].pop(0)
             self.update_info(time.time())
             self.update_table()
             
@@ -249,6 +260,7 @@ class PingDog(App):
         ("Protocol", "protocol"),
         ("URL", "url"),
         ("Status", "status"),
+        ("RT History", "plot"),
         ("Response Time", "response_time"),
         ("IP", "ip"),
         ("Detail", "detail"),
@@ -264,7 +276,10 @@ class PingDog(App):
             if value <= v:
                 return i
         return len(ranges)
-        
+     
+    def plot_response_time(values) -> str:
+        return plot(values, 0, 800, 7)
+     
     def update_table(self):
         table = self.query_one(DataTable)
         
@@ -273,9 +288,9 @@ class PingDog(App):
             table.add_columns(*self.columns)
             for url in self.urls:
                 if url.startswith('https://'):
-                    table.add_row(Text("\U0001F512HTTPS"), Text(url), Text("N/A"), Text("N/A"), Text("N/A"), Text(""), key=url)
+                    table.add_row(Text("\U0001F512HTTPS"), Text(url), Text("N/A"), Text("N/A"), Text(""), Text("N/A"), Text(""), key=url)
                 else:
-                    table.add_row(Text("\U0001F513HTTP"), Text(url), Text("N/A"), Text("N/A"), Text("N/A"), Text(""), key=url)
+                    table.add_row(Text("\U0001F513HTTP"), Text(url), Text("N/A"), Text("N/A"), Text(""), Text("N/A"), Text(""), key=url)
 
         for url in self.urls:
             metrics = self.metrics.get(url, {})
@@ -302,6 +317,9 @@ class PingDog(App):
                 response_text = Text((f"{response_time:.0f}ms" if response_time>= 10 else f"{response_time:.2f}ms") if response_time is not None else "N/A", style = style)
             else:
                 response_text = Text("N/A", style = "red")
+            
+            history = self.response_times_history.get(url, [])
+            plot_text = Text(PingDog.plot_response_time(history), style= row_style or "cyan")
                 
             if ip:
                 ip_text = Text(ip, style = row_style)
@@ -311,6 +329,7 @@ class PingDog(App):
             table.update_cell(url, "url", url_text)
             table.update_cell(url, "status", status_text, update_width=True)
             table.update_cell(url, "response_time", response_text, update_width=True)
+            table.update_cell(url, "plot", plot_text, update_width=True)
             table.update_cell(url, "ip", ip_text, update_width=True)
             table.update_cell(url, "detail", detail_text, update_width=True)
 
